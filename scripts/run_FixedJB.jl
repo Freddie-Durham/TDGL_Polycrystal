@@ -1,0 +1,33 @@
+using TDGL_Polycrystal
+
+function run_simulation(;uniqueID,startB,pixels_per_xi,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_inv_mass,Ecrit,Jramp,holdtime,init_hold,N_value,N_crystal,thickness,xmin,ymin,yperiodic,alphaN,betaN,backend)
+    FindType = Bfixed
+
+    finder, metadata, start_α, start_β, start_m⁻¹,start_σ = simulation_setup(
+    pixels_per_xi,N_value,N_crystal,thickness,
+    tstep,GL,conductivity,norm_resist,norm_inv_mass,
+    Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
+    yperiodic,alphaN,betaN,FindType,levelcount,
+    tol,backend,string(pkgversion(TDGL2D)),
+    startB) #<- last line contains arguments specific to FindType
+
+    path = "2DCrystalLattice/$(uniqueID)Efix/"
+    name = "$(uniqueID)B-"*to_string(startB)
+    mkdir(path)
+
+    save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_σ)
+
+    println("Setup Complete.")
+
+    sim_data, timetaken = find_jc(finder)
+
+    header = ["Current","Magnetic Field","Electric Field"]
+    save_simdata(path,name,sim_data,header,timetaken)
+    println("Simulation complete, time taken = $(timetaken)")  
+end
+
+function main()
+    kwargs = parse_CL()
+    run_simulation(;kwargs...)
+end
+main()

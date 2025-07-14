@@ -1,0 +1,103 @@
+
+
+"Used to rotate in 3D. Real number is angle in radians, imaginary 3Vec is axis of rotation"
+struct Quaternion
+    re::Real
+    im::Vector{Real}
+end
+
+"Normalises quaternion and converts real value to rotation angle"
+function attitude_quaternion(α,v::Vector{T}) where {T<:Real} #returns a normalised quaternion
+    v = normalize(v)
+    return Quaternion(cos(α/2),v*sin(α/2))
+end
+
+"Returns the complex conjugate of the quaternion"
+conjugate(q::Quaternion) = Quaternion(q.re,-q.im) #Assumes normalised quaternion
+"Returns absolute magnitude of quaternion"
+magnitude_sq(q::Quaternion) = q.re^2 + q.im[1]^2 + q.im[2]^2 + q.im[3]^2
+
+Base.:*(q::Quaternion,p::Quaternion) = Quaternion(q.re*p.re - dot(q.im,p.im),q.re*p.im + p.re*q.im + cross(q.im,p.im))
+
+Base.show(q::Quaternion) = print("Real:",q.re," Imaginary:",q.im)
+
+"Multiplies a normalised quaternion by a vector to return a vector"
+function rotate(v,q::Quaternion) 
+    v_quat = Quaternion(0,v)
+    return (q*v_quat*conjugate(q)).im
+end
+
+"Rotate point p about r_point around r_vec with angle α"
+function rotate_about_point(p,r_point,q::Quaternion) 
+    return rotate(p-r_point,q) + r_point
+end
+
+"rotates a set of basis vectors using a quaternion"
+function rotate_basis(basis,q::Quaternion)
+    return [rotate(basis[1],q),
+            rotate(basis[2],q),
+            rotate(basis[3],q)]
+end
+
+"Returns true if within boundaries defined by maxval"
+function issafe(index,maxval)
+    if index <= maxval && index > 0
+        return true
+    else
+        return false
+    end
+end
+
+"Linear interpolate. Returns value between 0 and 1"
+function lerp(min,max,val) 
+    return (val-min)/(max-min)
+end
+
+"Modified sign() that returns one if input is 0"
+function dsign(val)
+    if val == 0 
+        return 1
+    else
+        return sign(val)
+    end
+end
+
+"custom function to determine if val is near the target"
+function isapprx(val,target,rtol)
+    if (val > target*(1+rtol)) | (val < target*(1-rtol))
+        return false
+    else
+        return true
+    end
+end
+
+is_above(val,target,rtol) = (val > target) & (val < target*(1+rtol))
+
+is_below(val,target,rtol) = (val < target) & (val > target*(1-rtol))
+
+"find one value from a range above and one below equal to target within tolerance"
+function valfound(range,target,rtol)
+    return any([is_above(r,target,rtol) for r in range]) &
+     any([is_below(r,target,rtol) for r in range])
+end
+
+period_avg(data,period) = sum(data[end-period:end])/period
+
+"returns gradient of linear fit"
+function lin_ext(xdata,ydata)
+    if length(ydata) > 2
+        coefficients  = hcat(xdata,ones(length(xdata))) \ ydata
+        m = coefficients[1]
+        return m
+    else
+        m = (ydata[2] - ydata[1]) / (xdata[2] - xdata[1])   
+        return m  
+    end
+end
+
+"returns xvalue corresponding to ytarget using linear fit with gradient m"
+function invert_linear(m,xpos,ypos,ytarget)
+    c = ypos - m * xpos
+    return (ytarget - c) / m  
+end
+
