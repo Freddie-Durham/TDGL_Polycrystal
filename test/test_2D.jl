@@ -1,15 +1,15 @@
 @testset "Params" begin
     params = TDGL_Polycrystal.get_params(tstep,GL)
-    @test params::MulTDGL_FD.Parameters
+    @test typeof(params) == Parameters{Float64}
     @test params.k == tstep
 end
 const params = TDGL_Polycrystal.get_params(tstep,GL)
 
 @testset "Mesh" begin
     mesh = TDGL_Polycrystal.get_mesh(pixels,xmin,ymin,yperiodic)
-    @test mesh::MulTDGL_FD.RectMesh
-    @test mesh.h::Tuple{Float64,Float64}
-    @test mesh.extent == (xmin,ymin).*(2^6).*pixels
+    @test typeof(mesh) == RectMesh{2,Float64}
+    @test typeof(mesh.h) == Tuple{Float64,Float64}
+    @test mesh.extent == (xmin,ymin).*pixels
 end
 const mesh = TDGL_Polycrystal.get_mesh(pixels,xmin,ymin,yperiodic)
 
@@ -19,18 +19,17 @@ const n2 = elemcount(mesh, Val(2))
 
 @testset "State" begin
     state = TDGL_Polycrystal.get_state(n0,n1,mesh,backend)
-    @test state::MulTDGL_FD.State
-    @test state.φ::MulTDGL_FD.RectPrimalForm0Data
+    @test typeof(state) == State{RectPrimalForm0Data{2, ComplexF64, Vector{ComplexF64}}, RectPrimalForm1Data{2, Float64, Vector{Float64}}, RectPrimalForm0Data{2, Float64, Vector{Float64}}}
+    @test typeof(state.φ) == RectPrimalForm0Data{2, Float64, Vector{Float64}}
     @test sum(state.a.data) == 0
 end
 const state = TDGL_Polycrystal.get_state(n0,n1,mesh,backend)
 
 @testset "Material" begin
-    material,init_α,start_m⁻¹,start_σ = 
-    TDGL_Polycrystal.get_material(1.0,1.0,1.0,init_σ,n0,n1,pixels,grain_size,crystalangle,3,norm_res,1/norm_inv_mass,alphaN,1.0,mesh,backend)
+    material,init_α,start_m⁻¹,start_σ = TDGL_Polycrystal.get_material(1.0,1.0,1.0,init_σ,n0,n1,pixels,grain_size,crystalangle,3,norm_res,1/norm_inv_mass,alphaN,1.0,mesh,backend)
 
-    @test material::MulTDGL_FD.Material
-    @test material.β::MulTDGL_FD.RectPrimalForm0Data
+    @test typeof(material) == Material{RectPrimalForm0Data{2, Float64, Vector{Float64}}, RectPrimalForm1Data{2, Float64, Vector{Float64}}}
+    @test typeof(material.β) == RectPrimalForm0Data{2, Float64, Vector{Float64}}
 
     @test length(material.σ.data) == n1
     @test sum(init_α)/n0 < 1
@@ -40,7 +39,7 @@ const material = TDGL_Polycrystal.get_material(1.0,1.0,1.0,init_σ,n0,n1,pixels,
 @testset "JC2D System" begin
     system = TDGL_Polycrystal.jc2d_system(n1,n2,mesh,params,material,backend,B_app)
 
-    @test system.dc::RectPrimalForm2Data2
+    @test typeof(system.dc) == RectPrimalForm2Data2
 
     @test system.m.periodic[1] == true
     @test system.m.periodic[2] == false
@@ -59,7 +58,7 @@ solver = TDGL_Polycrystal.ImplicitLondonMultigridSolver(system, state, tol, leve
 @testset "Jc2D Finder" begin
     finder = TDGL_Polycrystal.JC2DFinder(solver,Ecrit,init_hold_time,wait_time,0.0,Jramp,B_app)
 
-    @test finder::JC2DFinder
+    @test typeof(finder) == JC2DFinder
     @test finder.mode == TDGL_Polycrystal.JC2DInitHold
     @test finder.esum == typeof(Ecrit)
     @test finder.solver == solver

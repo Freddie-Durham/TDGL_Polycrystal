@@ -40,7 +40,7 @@ end
 function parse_CL()
     s = ArgParseSettings()
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--uID"
             help = "Unique identifier, appended to data files to differentiate them"
             arg_type = String
@@ -169,7 +169,7 @@ function parse_CL()
         "--backend"
             help = "Type of hardware the simulation will be run on (eg. CPU, CUDA etc.)"
             arg_type = String
-            default = "CUDA"
+            default = "CPU"
     end
     return parse_args(s,as_symbols=true)
 end

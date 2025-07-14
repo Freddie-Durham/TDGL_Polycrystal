@@ -1,4 +1,7 @@
 using TDGL_Polycrystal
+using MulTDGL
+using KernelAbstractions
+using CUDA
 using Test
 
 const B_app = 0.95
@@ -24,7 +27,7 @@ const ymin = 2
 const alphaN = -1
 const levelcount = 4
 const tol = 1e-3
-const yperiodic = false
+const yperiodic = true
 const Version = "0.0.0"
 
 const Verbose = false
@@ -37,10 +40,12 @@ if CUDA.functional()
     backend = CUDABackend()
 end
 
-@testset "Utils" begin
-    include("test_utils.jl")
-end
+@testset "TDGL Polycrystal Tests" begin
+    @testset "Utils" begin
+        include("test_utils.jl")
+    end
 
-@testset "2D Crystal" begin
-    include("test_2D.jl")
+    @testset "2D Crystal" begin
+        include("test_2D.jl")
+    end
 end

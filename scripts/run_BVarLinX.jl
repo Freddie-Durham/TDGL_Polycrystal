@@ -9,7 +9,7 @@ function run_simulation(;uID,startB,stopB,stepB,num_samples,pixels_per_xi,tstep,
     tstep,GL,conductivity,norm_resist,norm_inv_mass,
     Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
     yperiodic,alphaN,betaN,FindType,levelcount,
-    tol,backend,string(pkgversion(TDGL2D)),
+    tol,backend,
     startB,stopB,stepB,num_samples) #<- last line contains arguments specific to FindType
 
     path = "2DCrystalLattice/$(uID)LinX/"

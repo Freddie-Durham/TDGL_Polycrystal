@@ -61,7 +61,7 @@ function get_params(tstep,GL)
     # parameters
     k = tstep # timestep                  0.5
     κ = GL    # Ginzburg–Landau parameter 10.0
-   return MulTDGL_FD.Parameters(k, κ)
+   return MulTDGL.Parameters(k, κ)
 end
 
 
@@ -71,7 +71,7 @@ function get_mesh(pixels,xdim,ydim,yperiodic)
     extent = (xdim,ydim).*pixels
     periodic = (true, yperiodic)
     h = (1.0/pixels, 1.0/pixels) # grid step
-    return MulTDGL_FD.RectMesh(extent, periodic, h)
+    return MulTDGL.RectMesh(extent, periodic, h)
 end
 
 
@@ -83,7 +83,7 @@ function get_state(n0,n1,m,backend)
     a = RectPrimalForm1Data(m, KernelAbstractions.zeros(backend, Float64, n1))
     φ = RectPrimalForm0Data(m, KernelAbstractions.zeros(backend, Float64, n0))
 
-    return MulTDGL_FD.State(ψ, a, φ)
+    return MulTDGL.State(ψ, a, φ)
 end
 
 
@@ -92,37 +92,39 @@ function get_material(init_α,init_β,init_m⁻¹,init_σ,n0,n1,pixels,grain_siz
     start_α = init_α*ones(Float64, elemextent(m, ()))
 
     if !(m.periodic[1] && m.periodic[2]) #we dont need alpha gradient to reduce edge effects if doubly periodic BCs
-        CrystalLattice.non_periodic!(start_α,elemextent(m, ()),1,10*pixels,alphaN,1.0)
+        non_periodic!(start_α,elemextent(m, ()),1,10*pixels,alphaN,1.0)
     end
     
-    CrystalLattice.tesselate!(CrystalLattice.octagon!,start_α,grain_size,grain_thick*pixels,crystalangle,m.extent[1],m.extent[2],alphaN)
+    tesselate!(octagon!,start_α,grain_size,grain_thick*pixels,crystalangle,m.extent[1],m.extent[2],alphaN)
     α = RectPrimalForm0Data(m, adapt(backend, reshape(start_α, :)))
     
     #need two lots of resistivity for x and y 
     start_σ = init_σ*ones(Float64, elemextent(m, (1,)))
     start_2σ = init_σ*ones(Float64, elemextent(m, (2,)))
-    CrystalLattice.tesselate!(CrystalLattice.octagon!,start_σ,grain_size,grain_thick*pixels,crystalangle,m.extent[1],m.extent[2],1/norm_resist)
-    CrystalLattice.tesselate!(CrystalLattice.octagon!,start_2σ,grain_size,grain_thick*pixels,crystalangle,m.extent[1],m.extent[2],1/norm_resist)
+    tesselate!(octagon!,start_σ,grain_size,grain_thick*pixels,crystalangle,m.extent[1],m.extent[2],1/norm_resist)
+    tesselate!(octagon!,start_2σ,grain_size,grain_thick*pixels,crystalangle,m.extent[1],m.extent[2],1/norm_resist)
 
     start_m⁻¹ = init_m⁻¹*ones(Float64, elemextent(m, (1,)))
     start_2m⁻¹ = init_m⁻¹*ones(Float64, elemextent(m, (2,)))
-    CrystalLattice.tesselate!(CrystalLattice.octagon!,start_m⁻¹,grain_size,grain_thick*pixels,crystalangle,m.extent[1],m.extent[2],1/norm_mass)
-    CrystalLattice.tesselate!(CrystalLattice.octagon!,start_2m⁻¹,grain_size,grain_thick*pixels,crystalangle,m.extent[1],m.extent[2],1/norm_mass)
+    tesselate!(octagon!,start_m⁻¹,grain_size,grain_thick*pixels,crystalangle,m.extent[1],m.extent[2],1/norm_mass)
+    tesselate!(octagon!,start_2m⁻¹,grain_size,grain_thick*pixels,crystalangle,m.extent[1],m.extent[2],1/norm_mass)
 
     σ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_σ, :),reshape(start_2σ, :))))       #normal state resistivity
     m⁻¹ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_m⁻¹, :),reshape(start_2m⁻¹, :)))) #reciprocal normal effective mass
 
     start_β = init_β*ones(Float64, elemextent(m, ()))
-    CrystalLattice.tesselate!(CrystalLattice.octagon!,start_β,grain_size,grain_thick*pixels,crystalangle,m.extent[1],m.extent[2],betaN)
+    tesselate!(octagon!,start_β,grain_size,grain_thick*pixels,crystalangle,m.extent[1],m.extent[2],betaN)
     β = RectPrimalForm0Data(m, adapt(backend, reshape(start_β, :)))
-    return MulTDGL_FD.Material(α, β, m⁻¹, σ),start_α,start_β,start_m⁻¹,start_σ
+    return MulTDGL.Material(α, β, m⁻¹, σ),start_α,start_β,start_m⁻¹,start_σ
 end
 
 
 "Set up parameters of simulation using CUDA"
-function simulation_setup(vortex_radius,N,num_crystal,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,finder,levelcount,tol,bknd,Version,B_init,args...)
+function simulation_setup(vortex_radius,N,num_crystal,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,finder,levelcount,tol,bknd,B_init,args...)
     if bknd == "CUDA"
         backend = CUDABackend() # for NVIDIA GPUs
+    elseif bknd == "AMDGPU"
+        backend = AMDGPUBackend() # for AMD GPUs
     elseif bknd == "CPU"
         backend = CPU() # for CPU
     else
@@ -152,7 +154,7 @@ function simulation_setup(vortex_radius,N,num_crystal,grain_thick,tstep,GL,init_
     state = get_state(n0,n1,mesh,backend)
 
     # create simulation
-    s = ImplicitLondonMultigridSolver(system, state, tol, levelcount)
+    s = MulTDGL.ImplicitLondonMultigridSolver(system, state, tol, levelcount)
 
     f_jc = finder(s,Ecrit,init_hold_time,wait_time,0.0,Jramp,B_init,args...)
 
@@ -162,8 +164,8 @@ function simulation_setup(vortex_radius,N,num_crystal,grain_thick,tstep,GL,init_
     "α" => init_α, "β" => init_β, "Effective electron mass" => norm_mass, "Normal resistivity" => norm_resist,
     "Grain size" => grain_size,"Multiple of grains" => 2^num_crystal,"Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
     "Crystal angle" => crystalangle,  "J ramp" => Jramp, "E criterion" => Ecrit, "Grain Boundary Thickness" => grain_thick,
-    "Date" => string(now()), "Backend" => string(backend), "Finder" => string(finder),"MulTDGL Version no." => string(pkgversion(MulTDGL_FD)),
-    "TDGL2D Version no." => string(Version), "CrystalLattice Version no."=> string(pkgversion(CrystalLattice)))
+    "Date" => string(now()), "Backend" => bknd, "Finder" => string(finder),"MulTDGL Version no." => string(pkgversion(MulTDGL)),
+    "TDGL_Polycrystal Version no." => Version)
 
     return f_jc,metadata,start_α,start_β,start_m⁻¹,start_σ
 end

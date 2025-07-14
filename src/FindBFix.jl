@@ -21,7 +21,7 @@ function Bfixed(solver, ecrit::R, shortholdtime, longholdtime, jinit::R, jrelste
     timesteps = 0
     curholdsteps = 0
     e_field = zero(R)
-    δda_rhs = MulTDGL_FD.similar(MulTDGL_FD.state(solver).a)
+    δda_rhs = MulTDGL.similar(MulTDGL.state(solver).a)
     data(δda_rhs) .= zero(eltype(data(δda_rhs)))
 
     Bfixed(solver,
@@ -48,7 +48,7 @@ function step!(finder::Bfixed)
     jc2d_bcs!(finder,sys)
 
     #call london multigrid
-    step_data = MulTDGL_FD.step!(finder.solver, finder.δda_rhs, (finder.j,0.0)) 
+    step_data = MulTDGL.step!(finder.solver, finder.δda_rhs, (finder.j,0.0)) 
     
     finder.E_field = step_data.e[1]
 

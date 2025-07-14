@@ -33,7 +33,7 @@ function BVarLinXFinder(solver, ecrit::R, shortholdtime, longholdtime, jinit::R,
     max_holds = 10 #set how many times we try to wait for true equilibrium
     e_field = zero(R)
     Ehist = Vector{R}([])
-    δda_rhs = MulTDGL_FD.similar(MulTDGL_FD.state(solver).a)
+    δda_rhs = MulTDGL.similar(MulTDGL.state(solver).a)
     data(δda_rhs) .= zero(eltype(data(δda_rhs)))
 
     #ensure user input error doesn't lead to solver running indefinitely
@@ -172,7 +172,7 @@ function step!(finder::BVarLinXFinder)
     jc2d_bcs!(finder,sys)
 
     #call london multigrid
-    step_data = MulTDGL_FD.step!(finder.solver, finder.δda_rhs, (finder.j,0.0)) 
+    step_data = MulTDGL.step!(finder.solver, finder.δda_rhs, (finder.j,0.0)) 
     
     finder.E_field = step_data.e[1]
 

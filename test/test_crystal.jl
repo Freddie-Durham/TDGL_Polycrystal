@@ -2,8 +2,8 @@ using GLMakie
 const rad2deg = 180/π
 
 function test_tesselate()
-    pixels = 4 #fidelity vs speed
-    xmin = 384   #min for 6 multigrid steps
+    pixels = 4
+    xmin = 384 
     xdims = xmin*pixels
     ydims = xmin*pixels  
 

@@ -1,5 +1,4 @@
-using HDF5
-using TDGL2D
+using TDGL_Polycrystal
 
 function version()
     return "0.3.1"
@@ -21,7 +20,7 @@ function run_simulation(uniqueID,startB,stopB,stepB,vortex_radius,tstep,GL,level
     FindType = JC2DFinder
     init_hold = 100
     finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(vortex_radius,N,num_crystal,thickness,tstep,GL,
-    init_σ,norm_resist,norm_inv_mass,Ecrit,Jramp,holdtime,init_hold,xmin,ymin,yperiodic,alphaN,betaN,FindType,levelcount,tol,backend,string(pkgversion(TDGL2D)),B_range[1])
+    init_σ,norm_resist,norm_inv_mass,Ecrit,Jramp,holdtime,init_hold,xmin,ymin,yperiodic,alphaN,betaN,FindType,levelcount,tol,backend,B_range[1])
 
     path = "2DCrystalLattice/"
     foldername = "$(uniqueID)/"

@@ -2,12 +2,14 @@ module TDGL_Polycrystal
 
 using MulTDGL
 using LinearAlgebra
-using Adapt
 using KernelAbstractions
-using CUDA
 using Dates
 using HDF5
+using Adapt
 using ArgParse
+using CUDA
+
+const Version = "0.1.0" 
 
 include("Defs.jl")
 include("Utilities.jl")
