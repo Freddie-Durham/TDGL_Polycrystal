@@ -1,18 +1,30 @@
-"save initial grid conditions and metadata to HDF5 file"
+"save initial grid settings and metadata to HDF5 file"
+function key_metadata(fid,start_α,start_β,start_m⁻¹,start_σ,metadata)
+    #save initial grid settings, can save on every timestep?
+    sim_grid = create_group(fid,"grid")
+    sim_grid["α"] = start_α
+    sim_grid["β"] = start_β
+    sim_grid["m⁻¹"] = start_m⁻¹
+    sim_grid["σ"] = start_σ
+
+    #append metadata for whole campaign to grid
+    for (key,val) in metadata 
+        HDF5.attributes(sim_grid)[key] = val
+    end
+end
+
+"create path to HDF5 file and save metadata and initial grid settings"
 function save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_σ)
     filepath = "$(path)$(name).h5"
     h5open(filepath,"cw") do fid
-        #save initial grid settings, can save on every timestep?
-        sim_grid = create_group(fid,"grid")
-        sim_grid["α"] = start_α
-        sim_grid["β"] = start_β
-        sim_grid["m⁻¹"] = start_m⁻¹
-        sim_grid["σ"] = start_σ
+        key_metadata(fid,start_α,start_β,start_m⁻¹,start_σ,metadata)
+    end
+end
 
-        #append metadata for whole campaign to grid
-        for (key,val) in metadata 
-            HDF5.attributes(sim_grid)[key] = val
-        end
+"iterate through header and save data to HDF5 file"
+function save_data(header,sim_data,data_group)
+    for (i,h) in enumerate(header)
+        data_group["$h"] = sim_data[i]
     end
 end
 
@@ -21,10 +33,7 @@ function save_simdata(path,name,sim_data,header,walltime)
     filepath = "$(path)$(name).h5"
     h5open(filepath,"cw") do fid
         data_group = create_group(fid,"data")
-        for (i,h) in enumerate(header)
-            data_group["$h"] = sim_data[i]
-        end
-
+        save_data(header,sim_data,data_group)
         sim_grid = fid["grid"]
         HDF5.attributes(sim_grid)["Wall Time"] = walltime
     end
