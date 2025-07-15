@@ -104,28 +104,6 @@ function tesselate!(shape,grid,len,thickness,angle,xlen,ylen,value=0)
     end 
 end
 
-"Draw a series of identical shapes that tesselate space"
-function tesselateNEW!(shape,grid,dims,len,thickness,angle,value=0)
-    safety_factor = 2 #min = sqrt(2)
-
-    startpos = Int.(dims/2 .- len/2)
-    dirx = [cos(angle),-sin(angle)]
-    diry = [sin(angle),cos(angle)]
-
-    max_len = max(dims[1],dims[2])
-    long_side = safety_factor*max_len
-    intlen = Int(ceil(long_side/len))
-
-    for i in -intlen:intlen
-        for j in -intlen:intlen
-            pos = Int.(startpos + i*dirx + j*diry)
-            if in_grid(pos,dims,[0,0],len)
-                shape(grid,pos,len,thickness,angle,value)
-            end
-        end
-    end 
-end
-
 "Applies non_periodic boundary conditions along top and bottom with lerp smoothing"
 function non_periodic!(mesh,dims,ymin,ymax,startval=0,endval=1)
     for i in 1:dims[1]

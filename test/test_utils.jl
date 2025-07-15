@@ -28,3 +28,11 @@ end
     avg = TDGL_Polycrystal.period_avg(data, period)
     @test avg == 2.5
 end
+
+@testset "Quaternion" begin
+    v = [1.0,0.0,0.0]
+    u = [0.0,0.0,1.0]
+    q = TDGL_Polycrystal.attitude_quaternion(π/2,v)
+    r = TDGL_Polycrystal.rotate(u,q)
+    @test r ≈ [0.0,-1.0,0.0] atol=1e-6
+end

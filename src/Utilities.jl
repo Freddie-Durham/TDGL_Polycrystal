@@ -40,8 +40,8 @@ function rotate_basis(basis,q::Quaternion)
 end
 
 "Returns true if within boundaries defined by maxval"
-function issafe(index,maxval)
-    if index <= maxval && index > 0
+function issafe(index,maxval,minval=0)
+    if index <= maxval && index > minval
         return true
     else
         return false
@@ -101,3 +101,42 @@ function invert_linear(m,xpos,ypos,ytarget)
     return (ytarget - c) / m  
 end
 
+"Take a local sample of a grid and return average value"
+function sample(grid::AbstractArray,point::Vector,span::Vector)
+    num = 0
+    total = 0
+
+    ndims = length(size(grid))
+    ranges = Tuple(point[i]-span[i]:point[i]+span[i] for i in 1:ndims)
+    
+    for i in CartesianIndices(ranges)
+        if checkbounds(Bool,grid,i)
+            total += grid[i]
+            num += 1
+        end
+    end
+    return total / num
+end
+
+"Loop through grid and take a low resolution sample at each new grid point"
+function lower_resolution(grid::AbstractArray,newdims::Tuple,span::Vector) 
+    steps = cld.(size(grid),newdims)
+    newgrid = zeros(eltype(grid),newdims)
+
+    for i in CartesianIndices(newgrid)
+        old_coords = (i.I .- 1) .* steps .+ 1
+        newgrid[i] = sample(grid,[old_coords...],span)
+    end
+    return newgrid
+end
+
+"call lower_resolution with a constant factor to divide grid size by"
+function lower_resolution(grid::AbstractArray,factor::Number) 
+    newdims = cld.(size(grid),factor)
+    span = [fld(factor,2) for i in 1:length(size(grid))]
+
+    println(newdims)
+    println(span)
+    
+    return lower_resolution(grid,newdims,span)
+end

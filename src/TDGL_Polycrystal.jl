@@ -9,7 +9,7 @@ using Adapt
 using ArgParse
 using CUDA
 
-const Version = "0.1.0" 
+const Version = "0.1.1" 
 
 include("Defs.jl")
 include("Utilities.jl")
@@ -22,5 +22,6 @@ include("Setup.jl")
 include("CLI.jl")
 
 export JC2DFinder, Bfixed, BVarLinXFinder, simulation_setup, parse_CL,
-       to_string, save_metadata, save_simdata, find_jc
+       to_string, save_metadata, save_simdata, find_jc, tesselate!, tesselateOct!,
+       JC2DInitHold, JC2DJHold, JC2DDone, BVarLinX
 end 
