@@ -85,7 +85,9 @@ function reached_equilibrium!(finder::BVarLinXFinder,tol=0.05)
     Elower = period_avg(finder.Ehist[1:end-finder.shortholdtime],finder.shortholdtime)
     
     #If avg E contains a significant trend, we continue holding
-    if (isapprx(abs(Eupper-Elower)+Eav, Eav, tol/2) & (Eav > 0)) | (finder.num_holds >= finder.max_holds) 
+    if (isapprx(abs(Eupper-Elower)+Eav, Eav, tol/2) & (Eav > 0)) || (finder.num_holds >= finder.max_holds) 
+
+
         Eav = abs(Eav)       #prevent crashes if Eav<0 after longholdtime*max_holds sim-steps
         finder.num_holds = 0
         finder.Ehist = Vector{typeof(finder.E_field)}([])
@@ -96,13 +98,13 @@ function reached_equilibrium!(finder::BVarLinXFinder,tol=0.05)
 
         #after we ramp up to Ecrit the first time, we ramp one more time
         #this lets us determine our first estimate for m
-        if (finder.sample_index == 2) & (finder.B_index == 1)
+        if (finder.sample_index == 2) && (finder.B_index == 1)
             finder.j = finder.j - finder.jrelstep  
             finder.sample_index += 1
 
         #after collecting num_samples of data, move on to next B field
         #1st index of allE stores B field, 1st index of allJ stores m
-        elseif (finder.sample_index >= finder.num_samples + 1) | valfound(curr_E_vals,finder.ecrit,tol)
+        elseif (finder.sample_index >= finder.num_samples + 1) || valfound(curr_E_vals,finder.ecrit,tol)
             #special case if very first two data points are accurate within tolerance, still need to record gradient
             if (finder.sample_index == 3) & (finder.B_index == 1)
                 m = lin_ext(log.(finder.allJ[finder.B_index,2:finder.sample_index]),log.(curr_E_vals))

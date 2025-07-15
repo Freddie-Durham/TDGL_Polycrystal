@@ -1,6 +1,7 @@
 using TDGL_Polycrystal
 using MulTDGL
 using KernelAbstractions
+using Adapt
 using CUDA
 using Test
 
@@ -11,27 +12,29 @@ const Bstart = 0.0
 const num_samples = 5
 const pixels = 2
 const N = 2
+const num_crystal = 1
+const grain_thick = 2
 const grain_size = 30.0
 const crystalangle = 30*π/180
 const tstep = 1.0
 const GL = 10.0
 const init_σ = 1.0
 const norm_res = 2.0
-const norm_inv_mass = 2.0
+const norm_mass = 0.5
 const Ecrit = 1e-5
 const Jramp = 1e-4
 const init_hold_time = 50
 const wait_time = 50
-const xmin = 1
-const ymin = 2
+const xmin = 32
+const ymin = 32
 const alphaN = -1
+const betaN = 1.0
 const levelcount = 4
 const tol = 1e-3
 const yperiodic = true
-const Version = "0.0.0"
 
 const Verbose = false
-const expensive = false
+const expensive = true
 
 bknd = "CPU"
 backend = CPU()
@@ -45,7 +48,13 @@ end
         include("test_utils.jl")
     end
 
-    @testset "2D Crystal" begin
-        include("test_2D.jl")
+    @testset "Crystal Lattice" begin
+        include("test_crystal.jl")
+    end
+
+    if expensive
+        @testset "2D Simulations" begin
+            include("test_2D.jl")
+        end
     end
 end

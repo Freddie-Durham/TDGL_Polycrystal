@@ -1,6 +1,10 @@
 using TDGL_Polycrystal
 
-function run_simulation(;uniqueID,startB,pixels_per_xi,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_inv_mass,Ecrit,Jramp,holdtime,init_hold,N_value,N_crystal,thickness,xmin,ymin,yperiodic,alphaN,betaN,backend)
+function run_simulation(;uID,startB,max_steps,
+    pixels_per_xi,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_inv_mass,
+    Ecrit,Jramp,holdtime,init_hold,N_value,N_crystal,thickness,
+    xmin,ymin,yperiodic,alphaN,betaN,backend,kwargs...)
+    
     FindType = Bfixed
 
     finder, metadata, start_α, start_β, start_m⁻¹,start_σ = simulation_setup(
@@ -9,10 +13,10 @@ function run_simulation(;uniqueID,startB,pixels_per_xi,tstep,GL,levelcount,tol,c
     Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
     yperiodic,alphaN,betaN,FindType,levelcount,
     tol,backend,
-    startB) #<- last line contains arguments specific to FindType
+    startB,max_steps) #<- last line contains arguments specific to FindType
 
-    path = "2DCrystalLattice/$(uniqueID)Efix/"
-    name = "$(uniqueID)B-"*to_string(startB)
+    path = "outputs/$(uID)Efix/"
+    name = "$(uID)B-"*to_string(startB)
     mkdir(path)
 
     save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_σ)

@@ -66,6 +66,11 @@ function parse_CL()
             arg_type = Int64
             default = 5
 
+        "--max_steps"
+            help = "Maximum number of steps taken in fixed J/B mode, after which the simulation is stopped"
+            arg_type = Int64
+            default = 1000
+
         "--pixels_per_xi"
             help = "Number of grid steps in a single coherence length. Grid step h=1/pixels_per_xi"
             arg_type = Int64

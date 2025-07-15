@@ -81,7 +81,7 @@ function valfound(range,target,rtol)
      any([is_below(r,target,rtol) for r in range])
 end
 
-period_avg(data,period) = sum(data[end-period:end])/period
+period_avg(data,period) = sum(data[end-period:end])/(period+1)
 
 "returns gradient of linear fit"
 function lin_ext(xdata,ydata)

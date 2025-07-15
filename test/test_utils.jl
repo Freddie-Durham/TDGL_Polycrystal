@@ -14,3 +14,17 @@
     J = exp(logJ)
     @test (J < Jdata[1]) & (J > Jdata[end])
 end
+
+@testset "Period Average" begin
+    #test basic functionality
+    data = [1,2,3,4,5]
+    period = 2
+    avg = TDGL_Polycrystal.period_avg(data, period)
+    @test avg == 4
+
+    #test with uneven length data
+    data = [1,2,3,4]
+    period = 3
+    avg = TDGL_Polycrystal.period_avg(data, period)
+    @test avg == 2.5
+end

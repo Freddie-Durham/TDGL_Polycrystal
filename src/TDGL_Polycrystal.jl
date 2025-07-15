@@ -21,5 +21,6 @@ include("FindLinX.jl")
 include("Setup.jl")
 include("CLI.jl")
 
-export JC2D_finder, Bfixed, BVarLinXFinder, simulation_setup, parse_CL
+export JC2DFinder, Bfixed, BVarLinXFinder, simulation_setup, parse_CL,
+       to_string, save_metadata, save_simdata, find_jc
 end 

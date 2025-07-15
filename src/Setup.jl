@@ -24,7 +24,7 @@ function set_fluxons!(c,dc,B,mesh,backend)
     flux = B * mesh.extent[1] * mesh.h[1] * mesh.extent[2] * mesh.h[2]
 
     fluxoncount = round(flux/2π)
-    println("Fluxoncount = $(Int(fluxoncount))")
+    #println("Fluxoncount = $(Int(fluxoncount))")
 
     n = elemextent(mesh, (2,), 1)
     asarray(c, 2)[:, end] .=
@@ -40,7 +40,7 @@ function jc2d_system(n1, n2, mesh, params, material, backend, B_field)
     dc = RectPrimalForm2Data2(mesh, KernelAbstractions.zeros(backend, Float64, n2))
 
     if mesh.periodic[1] && mesh.periodic[2]
-        println("Doubly periodic BCs")
+        #println("Doubly periodic BCs")
         # the wavefunction is a section of a fibre bundle and the
         # vector potential is essentially the connection. by putting a
         # twist in the bundle we can have any whole number of flux
