@@ -59,8 +59,8 @@ end
 "returns parameters timestep (<1) and kappa (>1 for technological SCs)"
 function get_params(tstep,GL)
     # parameters
-    k = tstep # timestep                  0.5
-    κ = GL    # Ginzburg–Landau parameter 10.0
+    k = tstep # timestep                 
+    κ = GL    # Ginzburg–Landau parameter
    return MulTDGL.Parameters(k, κ)
 end
 
@@ -87,7 +87,7 @@ function get_state(n0,n1,m,backend)
 end
 
 
-"Setup material using CrystalLattice code according to Carty(2008)"
+"Setup material using Crystal2D according to Carty(2008)"
 function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,grain_size,crystalangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,m,backend)
     factor = 5
     #alpha gradient to reduce edge effects if non-periodic BCs
