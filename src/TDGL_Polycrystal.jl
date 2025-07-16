@@ -22,6 +22,6 @@ include("Setup.jl")
 include("CLI.jl")
 
 export JC2DFinder, Bfixed, BVarLinXFinder, simulation_setup, parse_CL,
-       to_string, save_metadata, save_simdata, find_jc, tesselate!, tesselateOct!,
+       to_string, save_metadata, save_simdata, find_jc, apply_pattern,
        JC2DInitHold, JC2DJHold, JC2DDone, BVarLinX
 end 

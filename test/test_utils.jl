@@ -36,3 +36,26 @@ end
     r = TDGL_Polycrystal.rotate(u,q)
     @test r ≈ [0.0,-1.0,0.0] atol=1e-6
 end
+
+@testset "Anti-Aliasing" begin
+    @testset "Sample" begin
+        grid = reshape(1.0:144.0,(12,12))
+
+        avg1 = TDGL_Polycrystal.sample(grid,[2,2],[1,1])
+        @test avg1 == 14
+
+        avg2 = TDGL_Polycrystal.sample(grid,[12,12],[1,1])
+        @test avg2 == 137.5
+    end
+    
+    @testset "Low Resolution Grid" begin
+        grid = reshape(1.0:15.0^2,(15,15))
+        newgrid = TDGL_Polycrystal.lower_resolution(grid,3)
+        @test size(newgrid) == (5,5)
+        @test sum(newgrid)*9 == sum(grid)
+
+        newgrid = TDGL_Polycrystal.lower_resolution(grid,5)
+        @test size(newgrid) == (3,3)
+        @test sum(newgrid)*25 == sum(grid)
+    end
+end

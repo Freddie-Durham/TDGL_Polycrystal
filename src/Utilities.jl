@@ -124,7 +124,7 @@ function lower_resolution(grid::AbstractArray,newdims::Tuple,span::Vector)
     newgrid = zeros(eltype(grid),newdims)
 
     for i in CartesianIndices(newgrid)
-        old_coords = (i.I .- 1) .* steps .+ 1
+        old_coords = (i.I .- 1) .* steps .+ 1 .+ span
         newgrid[i] = sample(grid,[old_coords...],span)
     end
     return newgrid
@@ -134,9 +134,6 @@ end
 function lower_resolution(grid::AbstractArray,factor::Number) 
     newdims = cld.(size(grid),factor)
     span = [fld(factor,2) for i in 1:length(size(grid))]
-
-    println(newdims)
-    println(span)
     
     return lower_resolution(grid,newdims,span)
 end

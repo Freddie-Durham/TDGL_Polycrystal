@@ -34,7 +34,7 @@ const tol = 1e-3
 const yperiodic = true
 
 const Verbose = false
-const expensive = true
+const expensive = false
 
 bknd = "CPU"
 backend = CPU()

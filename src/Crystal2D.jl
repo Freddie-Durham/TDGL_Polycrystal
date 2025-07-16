@@ -114,3 +114,11 @@ function non_periodic!(mesh,dims,ymin,ymax,startval=0,endval=1)
         end
     end
 end
+
+"Apply tesselating pattern to a grid at high resolution then return anti-aliased scaled down version"
+function apply_pattern(shape,init_val,new_val,pixels,factor,grain_size,grain_thick,angle,xlen,ylen,veclen)
+    init_grid = init_val*ones(Float64,veclen.*factor)
+    tesselate!(shape,init_grid,grain_size*pixels*factor,grain_thick*pixels*factor,angle,xlen*factor,ylen*factor,new_val)
+
+    return lower_resolution(init_grid,factor)
+end
