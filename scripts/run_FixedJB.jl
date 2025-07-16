@@ -1,7 +1,7 @@
 using TDGL_Polycrystal
 
 function run_simulation(;uID,startB,max_steps,
-    pixels_per_xi,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_inv_mass,
+    pixels_per_xi,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
     Ecrit,Jramp,holdtime,init_hold,N_value,N_crystal,thickness,
     xmin,ymin,yperiodic,alphaN,betaN,backend,kwargs...)
     
@@ -9,7 +9,7 @@ function run_simulation(;uID,startB,max_steps,
 
     finder, metadata, start_α, start_β, start_m⁻¹,start_σ = simulation_setup(
     pixels_per_xi,N_value,N_crystal,thickness,
-    tstep,GL,conductivity,norm_resist,norm_inv_mass,
+    tstep,GL,conductivity,norm_resist,norm_mass,
     Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
     yperiodic,alphaN,betaN,FindType,levelcount,
     tol,backend,

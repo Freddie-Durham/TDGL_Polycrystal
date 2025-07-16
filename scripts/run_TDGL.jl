@@ -2,7 +2,7 @@ using TDGL_Polycrystal
 using HDF5
 
 function run_simulation(;uID,startB,stopB,stepB,
-    pixels_per_xi,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_inv_mass,
+    pixels_per_xi,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
     Ecrit,Jramp,holdtime,init_hold,N_value,N_crystal,thickness,
     xmin,ymin,yperiodic,alphaN,betaN,backend,kwargs...)
     init_time = time()
@@ -20,7 +20,7 @@ function run_simulation(;uID,startB,stopB,stepB,
     FindType = JC2DFinder
     finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(
     pixels_per_xi,N_value,N_crystal,thickness,
-    tstep,GL,conductivity,norm_resist,norm_inv_mass,
+    tstep,GL,conductivity,norm_resist,norm_mass,
     Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
     yperiodic,alphaN,betaN,FindType,levelcount,tol,backend,
     B_range[1])
@@ -48,7 +48,7 @@ function run_simulation(;uID,startB,stopB,stepB,
         for B in B_range
             finder, α, β, m⁻¹,σ = simulation_setup(
             pixels_per_xi,N_value,N_crystal,thickness,
-            tstep,GL,conductivity,norm_resist,norm_inv_mass,
+            tstep,GL,conductivity,norm_resist,norm_mass,
             Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
             yperiodic,alphaN,betaN,FindType,levelcount,tol,backend,
             B)

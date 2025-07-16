@@ -111,12 +111,12 @@ function parse_CL()
             default = 1.0
 
         "--norm_resist"
-            help = "Resistivity of the normal material in the superconducting matrix"
+            help = "Resistivity of the normal material in the superconducting matrix (proportional to effective carrier mass)"
             arg_type = Float64
             default = 2.0
 
-        "--norm_inv_mass"
-            help = "Inverse effective carrier mass of the normal material in the superconducting matrix"
+        "--norm_mass"
+            help = "Effective carrier mass of the normal material in the superconducting matrix (proportional to resistivity)"
             arg_type = Float64
             default = 2.0
 
