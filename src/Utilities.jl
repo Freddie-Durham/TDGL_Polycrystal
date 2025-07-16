@@ -95,7 +95,7 @@ function lin_ext(xdata,ydata)
     end
 end
 
-"returns xvalue corresponding to ytarget using linear fit with gradient m"
+"Returns xvalue corresponding to ytarget using linear fit with gradient m"
 function invert_linear(m,xpos,ypos,ytarget)
     c = ypos - m * xpos
     return (ytarget - c) / m  
@@ -130,10 +130,19 @@ function lower_resolution(grid::AbstractArray,newdims::Tuple,span::Vector)
     return newgrid
 end
 
-"call lower_resolution with a constant factor to divide grid size by"
+"Call lower_resolution with a constant factor to divide grid size by"
 function lower_resolution(grid::AbstractArray,factor::Number) 
     newdims = cld.(size(grid),factor)
     span = [fld(factor,2) for i in 1:length(size(grid))]
     
     return lower_resolution(grid,newdims,span)
+end
+
+"Create path if it does not exist"
+function make_path(path::AbstractString)
+    if !isdir(path)
+        mkpath(path)
+    else
+        error("Path $(path) already exists. Please choose a different path.")
+    end
 end

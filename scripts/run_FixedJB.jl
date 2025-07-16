@@ -17,7 +17,7 @@ function run_simulation(;uID,startB,max_steps,
 
     path = "outputs/$(uID)Efix/"
     name = "$(uID)B-"*to_string(startB)
-    mkdir(path)
+    make_path(path*name)
 
     save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_σ)
 
