@@ -57,7 +57,7 @@ function run_simulation(;uID,startB,stopB,stepB,
             sim_data, timetaken = find_jc(finder)
 
             shot_metadata = Dict("Applied field" => B,"Time taken" => timetaken)
-            data_group = create_group(campaign_group,"$(B)T data")
+            data_group = create_group(campaign_group,"$(B)b data")
             TDGL_Polycrystal.save_data(header,sim_data,data_group)
             for (key,val) in shot_metadata 
                 HDF5.attributes(data_group)[key] = val
