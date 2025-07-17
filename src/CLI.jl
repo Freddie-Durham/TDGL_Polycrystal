@@ -1,7 +1,6 @@
 "save initial grid settings and metadata to HDF5 file"
-function key_metadata(fid,start_α,start_β,start_m⁻¹,start_σ,metadata)
+function key_metadata(sim_grid,start_α,start_β,start_m⁻¹,start_σ,metadata)
     #save initial grid settings, can save on every timestep?
-    sim_grid = create_group(fid,"grid")
     sim_grid["α"] = start_α
     sim_grid["β"] = start_β
     sim_grid["m⁻¹"] = start_m⁻¹
@@ -17,7 +16,8 @@ end
 function save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_σ)
     filepath = "$(path)$(name).h5"
     h5open(filepath,"cw") do fid
-        key_metadata(fid,start_α,start_β,start_m⁻¹,start_σ,metadata)
+        sim_grid = create_group(fid,"grid")
+        key_metadata(sim_grid,start_α,start_β,start_m⁻¹,start_σ,metadata)
     end
 end
 

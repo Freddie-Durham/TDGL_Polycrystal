@@ -40,7 +40,8 @@ function run_simulation(;uID,startB,stopB,stepB,
     filepath = "$(path)$(name)$(campaign).h5"
     header = ["Current","Electric Field"]
     h5open(filepath,"w") do fid
-        TDGL_Polycrystal.key_metadata(fid,start_α,start_β,start_m⁻¹,start_σ,metadata)
+        sim_grid = create_group(fid,"grid")
+        TDGL_Polycrystal.key_metadata(sim_grid,start_α,start_β,start_m⁻¹,start_σ,metadata)
         println("Setup Complete")
 
         #create folder for current campaign
@@ -65,6 +66,7 @@ function run_simulation(;uID,startB,stopB,stepB,
                 HDF5.attributes(data_group)[key] = val
             end
         end 
+        HDF5.attributes(sim_grid)["WallTime"] = time()-init_time
     end 
     println("Simulation complete, time taken = $(time()-init_time)")  
 end
