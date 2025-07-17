@@ -29,7 +29,7 @@ function run_simulation(;uID,startB,stopB,stepB,
 
     path = "outputs/"
     name = "$(uID)/"
-    TDGL_Polycrystal.make_path(path*name)
+    mkpath(path*name)
 
     #Save params of B field range for plotting
     h5open("$(path)$(name)params$(convert(Int64,round(startB))).h5","w") do fid

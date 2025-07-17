@@ -18,7 +18,7 @@ function run_simulation(;uID,startB,stopB,stepB,num_samples,
 
     path = "outputs/$(uID)LinX/"
     name = "$(uID)Bi-"*to_string(startB)*"Bf-"*to_string(stopB)
-    TDGL_Polycrystal.make_path(path*name)
+    mkpath(path*name)
 
     save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_σ)
 
