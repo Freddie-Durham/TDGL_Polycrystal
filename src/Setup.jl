@@ -88,8 +88,7 @@ end
 
 
 "Setup material using Crystal2D according to Carty(2008)"
-function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,grain_size,crystalangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,m,backend)
-    factor = 5
+function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,factor,grain_size,crystalangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,m,backend)
     #alpha gradient to reduce edge effects if non-periodic BCs
     if !(m.periodic[1] && m.periodic[2]) 
         non_periodic!(start_α,elemextent(m, ()),1,10*pixels,alphaN,1.0)
@@ -118,7 +117,7 @@ end
 
 
 "Set up parameters of simulation using CUDA"
-function simulation_setup(vortex_radius,N,num_crystal,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,finder,levelcount,tol,bknd,B_init,args...)
+function simulation_setup(vortex_radius,factor,N,num_crystal,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,finder,levelcount,tol,bknd,B_init,args...)
     if bknd == "CUDA"
         backend = CUDABackend() # for NVIDIA GPUs
     elseif bknd == "AMDGPU"
@@ -145,7 +144,7 @@ function simulation_setup(vortex_radius,N,num_crystal,grain_thick,tstep,GL,init_
     init_α = 1.0
     init_β = 1.0
     init_m⁻¹ = 1.0
-    material,start_α,start_β,start_m⁻¹,start_σ = get_material(init_α,init_β,init_m⁻¹,init_σ,vortex_radius,grain_diameter,grainangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,mesh,backend)
+    material,start_α,start_β,start_m⁻¹,start_σ = get_material(init_α,init_β,init_m⁻¹,init_σ,vortex_radius,factor,grain_diameter,grainangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,mesh,backend)
 
     system = jc2d_system(n1,n2,mesh,params,material,backend,B_init)
     state = get_state(n0,n1,mesh,backend)

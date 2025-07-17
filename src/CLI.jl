@@ -85,6 +85,11 @@ function parse_CL()
             arg_type = Int64
             default = 4
 
+        "--AA_factor"
+            help = "Factor by which resolution of grid is increased to anti-alias the rasterised pattern"
+            arg_type = Int64 
+            default = 5
+
         "--tstep"
             help = "Time increment per simulation step, in the normalised TDGL time unit τ"
             arg_type = Float64
