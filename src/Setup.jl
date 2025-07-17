@@ -89,11 +89,6 @@ end
 
 "Setup material using Crystal2D according to Carty(2008)"
 function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,factor,grain_size,crystalangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,m,backend)
-    #alpha gradient to reduce edge effects if non-periodic BCs
-    if !(m.periodic[1] && m.periodic[2]) 
-        non_periodic!(start_α,elemextent(m, ()),1,10*pixels,alphaN,1.0)
-    end
-    
     #apply pattern to normalised α value
     start_α = apply_pattern(octagon!,init_α,alphaN,pixels,factor,grain_size,grain_thick,crystalangle,m.extent[1],m.extent[2],elemextent(m, ()))
     α = RectPrimalForm0Data(m, adapt(backend, reshape(start_α, :)))
