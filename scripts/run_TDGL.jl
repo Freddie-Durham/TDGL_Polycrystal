@@ -7,6 +7,8 @@ function run_simulation(;uID,startB,stopB,stepB,
     xmin,ymin,yperiodic,alphaN,betaN,backend,kwargs...)
     init_time = time()
 
+    stopB = startB + stopB
+
     #avoid difficulty with filenames that have decimal points
     if stepB >= 1 
         campaign = "$(convert(Int64,startB))_$(convert(Int64,stopB))%B_step$(convert(Int64,stepB))"
