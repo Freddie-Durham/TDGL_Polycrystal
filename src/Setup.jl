@@ -91,6 +91,12 @@ end
 function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,factor,grain_size,crystalangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,m,backend)
     #apply pattern to normalised α value
     start_α = apply_pattern(octagon!,init_α,alphaN,pixels,factor,grain_size,grain_thick,crystalangle,m.extent[1],m.extent[2],elemextent(m, ()))
+    #apply coating if non-periodic in y direction
+    if m.periodic[1] && !m.periodic[2]
+        thickness = Int(7.5*pixels)
+        start_α[:,1:thickness] .= alphaN
+        start_α[:,end-thickness:end] .= alphaN
+    end
     α = RectPrimalForm0Data(m, adapt(backend, reshape(start_α, :)))
     
     #need two lots of conductivity for x and y 
