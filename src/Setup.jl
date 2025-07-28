@@ -24,7 +24,7 @@ function set_fluxons!(c,dc,B,mesh,backend)
     flux = B * mesh.extent[1] * mesh.h[1] * mesh.extent[2] * mesh.h[2]
 
     fluxoncount = round(flux/2π)
-    #println("Fluxoncount = $(Int(fluxoncount))")
+    println("Fluxoncount = $(Int(fluxoncount))")
 
     n = elemextent(mesh, (2,), 1)
     asarray(c, 2)[:, end] .=
@@ -159,6 +159,7 @@ function simulation_setup(vortex_radius,factor,N,num_crystal,grain_thick,tstep,G
     "yMesh" => mesh.extent[2], "Vortex radius (pixels)" => vortex_radius, "xPeriodic" => string(mesh.periodic[1]),
     "yPeriodic" => string(mesh.periodic[2]), "Tolerance" => tol, "Multigrid steps" => levelcount, 
     "α" => init_α, "β" => init_β, "Effective electron mass" => norm_mass, "Normal resistivity" => norm_resist,
+    "α_N" => alphaN, "β_N" => betaN,
     "Grain size (ξ)" => grain_diameter,"Multiple of grains" => 2^num_crystal,"Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
     "Lattice angle" => grainangle,  "J ramp" => Jramp, "E criterion" => Ecrit, "Grain Boundary Thickness (ξ)" => grain_thick,
     "Date" => string(now()), "Backend" => bknd, "Finder" => string(finder),"MulTDGL Version no." => string(pkgversion(MulTDGL)),

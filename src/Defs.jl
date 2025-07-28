@@ -15,3 +15,11 @@ system(finder::Finder) = MulTDGL.system(finder.solver)
 
 const JC2DMode = Union{JC2DInitHold,JC2DJHold,JC2DDone}
 const LinXMode = Union{JC2DInitHold,JC2DJHold,BVarLinX,JC2DDone}
+
+"Calculate supercurrent density then return average value"
+function Js_avg(solver,sys,st)
+    set_form!(solver.scratch_1, sys.m, sys.mat.m⁻¹, sys.u, st) do e, _, m, m⁻¹, u, st
+        jₛₑ(m, m⁻¹, u, st.ψ, e)
+    end
+    MulTDGL.rect_average_in_place!(solver.scratch_1, sys.m)
+end

@@ -18,10 +18,11 @@ include("Crystal3D.jl")
 include("FindJc2D.jl")
 include("FindBFix.jl")
 include("FindLinX.jl")
+include("FindEvsJ.jl")
 include("Setup.jl")
 include("CLI.jl")
 
 export JC2DFinder, Bfixed, BVarLinXFinder, simulation_setup, parse_CL,
        to_string, save_metadata, save_simdata, find_jc, apply_pattern,
-       JC2DInitHold, JC2DJHold, JC2DDone, BVarLinX
+       JC2DInitHold, JC2DJHold, JC2DDone, BVarLinX, EvsJ
 end 
