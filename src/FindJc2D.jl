@@ -52,7 +52,6 @@ function step!(finder::JC2DFinder)
     #record path of E field over time
     push!(finder.lifetimeE,finder.E_field)
 
-    #update boundary conditions
     jc2d_bcs!(finder,sys)
 
     #call london multigrid

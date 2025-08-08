@@ -17,7 +17,7 @@ function jc2d_bcs!(finder::Finder,sys::System)
     end
 end
 
-"Sets phase difference to mimic applied magnetic field in full periodic BCs using fluxons"
+"Sets gauge function to fix discontinuity in vector potential due to applied magnetic field in full periodic BCs using fluxon number"
 function set_fluxons!(c,dc,B,mesh,backend)
     #flux = fluxoncount * 2π
     #B field = flux / area

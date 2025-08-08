@@ -189,6 +189,21 @@ function parse_CL()
             help = "Type of hardware the simulation will be run on (eg. CPU, CUDA etc.)"
             arg_type = String
             default = "CPU"
+
+        "--profil"
+            help = "Debug setting, set to true to run a profiler on an EvsJ trace"
+            arg_type = Bool
+            default = false
+        
+        "--vary_param"
+            help = "Debug setting, choose parameter to vary to test convergence when finding Jc"
+            arg_type = String
+            default = "pixels"
+
+        "--num_vary"
+            help = "Debug setting, determine number of simulations to run when varying --vary_param"
+            arg_type = Int64
+            default = 1
     end
     return parse_args(s,as_symbols=true)
 end

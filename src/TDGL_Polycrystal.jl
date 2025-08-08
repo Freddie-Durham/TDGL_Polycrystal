@@ -9,7 +9,7 @@ using Adapt
 using ArgParse
 using CUDA
 
-const Version = "0.1.1" 
+const Version = "0.1.3" 
 
 include("Defs.jl")
 include("Utilities.jl")
@@ -24,5 +24,5 @@ include("CLI.jl")
 
 export JC2DFinder, Bfixed, BVarLinXFinder, simulation_setup, parse_CL,
        to_string, save_metadata, save_simdata, find_jc, apply_pattern,
-       JC2DInitHold, JC2DJHold, JC2DDone, BVarLinX, EvsJ
-end 
+       JC2DInitHold, JC2DJHold, JC2DDone, BVarLinX, EvsJ, step!
+end #module TDGL_Polycrystal

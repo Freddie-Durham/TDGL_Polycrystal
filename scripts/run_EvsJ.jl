@@ -1,9 +1,10 @@
 using TDGL_Polycrystal
+using Profile
 
 function run_simulation(;uID,startB,max_steps,
     pixels_per_xi,AA_factor,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
     Ecrit,Jramp,holdtime,init_hold,N_value,N_crystal,thickness,
-    xmin,ymin,yperiodic,alphaN,betaN,backend,kwargs...)
+    xmin,ymin,yperiodic,alphaN,betaN,backend,profil,kwargs...)
     
     FindType = EvsJ
 
@@ -15,19 +16,36 @@ function run_simulation(;uID,startB,max_steps,
     tol,backend,
     startB,max_steps) #<- last line contains arguments specific to FindType
 
-    path = "outputs/$(uID)_EvsJ/"
-    name = "$(uID)B-"*to_string(startB)
-    TDGL_Polycrystal.make_path(path)
+    if profil
+        prof_sim(finder)
+    else
+        path = "outputs/$(uID)_EvsJ/"
+        name = "$(uID)B-"*to_string(startB)
+        TDGL_Polycrystal.make_path(path)
 
-    save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_σ)
+        save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_σ)
 
-    println("Setup Complete.")
+        println("Setup Complete.")
 
-    sim_data, timetaken = find_jc(finder)
+        sim_data, timetaken = find_jc(finder)
+        header = ["Current","Super Current","Magnetic Field","Electric Field"]
+        save_simdata(path,name,sim_data,header,timetaken)
+        println("Simulation complete, time taken = $(timetaken)")  
+    end
+end
 
-    header = ["Current","Super Current","Magnetic Field","Electric Field"]
-    save_simdata(path,name,sim_data,header,timetaken)
-    println("Simulation complete, time taken = $(timetaken)")  
+function prof_sim(finder)
+    ###profile the simulation
+    run_small(finder) 
+    @profile run_small(finder)
+
+    Profile.print()
+end
+
+function run_small(finder)
+    for _ in 1:100
+        step!(finder)
+    end
 end
 
 function main()
