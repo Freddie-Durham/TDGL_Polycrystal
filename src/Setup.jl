@@ -118,7 +118,7 @@ end
 
 
 "Set up parameters of simulation using CUDA"
-function simulation_setup(vortex_radius,factor,N,num_crystal,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,finder,levelcount,tol,bknd,B_init,args...)
+function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,finder,levelcount,tol,bknd,B_init,args...)
     if bknd == "CUDA"
         backend = CUDABackend() # for NVIDIA GPUs
     elseif bknd == "AMDGPU"
@@ -130,8 +130,7 @@ function simulation_setup(vortex_radius,factor,N,num_crystal,grain_thick,tstep,G
     end
 
     #setup grain size and orientation to ensure periodicity
-    grainangle,grain_diameter = periodic_crystal(N,xdim)
-    grain_diameter *= 2.0^(-num_crystal)
+    grainangle,grain_diameter = periodic_crystal(N,fld(xdim,rep_grain))
 
     #get parameters + material, setup the SC system. Create initial state of system and initialise solver. Return solver along with BCs
     params = get_params(tstep,GL)
@@ -160,7 +159,7 @@ function simulation_setup(vortex_radius,factor,N,num_crystal,grain_thick,tstep,G
     "yPeriodic" => string(mesh.periodic[2]), "Tolerance" => tol, "Multigrid steps" => levelcount, 
     "α" => init_α, "β" => init_β, "Effective electron mass" => norm_mass, "Normal resistivity" => norm_resist,
     "α_N" => alphaN, "β_N" => betaN,
-    "Grain size (ξ)" => grain_diameter,"Multiple of grains" => 2^num_crystal,"Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
+    "Grain size (ξ)" => grain_diameter,"Multiple of grains" => rep_grain,"Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
     "Lattice angle" => grainangle,  "J ramp" => Jramp, "E criterion" => Ecrit, "Grain Boundary Thickness (ξ)" => grain_thick,
     "Date" => string(now()), "Backend" => bknd, "Finder" => string(finder),"MulTDGL Version no." => string(pkgversion(MulTDGL)),
     "TDGL_Polycrystal Version no." => Version)

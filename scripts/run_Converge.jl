@@ -2,7 +2,7 @@ using TDGL_Polycrystal
 
 function run_simulation(;uID,startB,vary_param,num_vary,
     pixels_per_xi,AA_factor,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
-    Ecrit,Jramp,holdtime,init_hold,N_value,N_crystal,thickness,
+    Ecrit,Jramp,holdtime,init_hold,N_value,rep_grain,thickness,
     xmin,ymin,yperiodic,alphaN,betaN,backend,kwargs...)
     
     FindType = JC2DFinder
@@ -14,7 +14,7 @@ function run_simulation(;uID,startB,vary_param,num_vary,
 
     for i in 1:num_vary
         finder, metadata, start_α, start_β, start_m⁻¹,start_σ = simulation_setup(
-        pixels_per_xi,AA_factor,N_value,N_crystal,thickness,
+        pixels_per_xi,AA_factor,N_value,rep_grain,thickness,
         tstep,GL,conductivity,norm_resist,norm_mass,
         Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
         yperiodic,alphaN,betaN,FindType,levelcount,
@@ -38,6 +38,7 @@ function run_simulation(;uID,startB,vary_param,num_vary,
                 println("Running simulation with 1/h = $pixels_per_xi")
             elseif uppercase(vary_param) == "LENGTH"
                 xmin *= 2
+                rep_grain *= 2
                 println("Running simulation with length = $xmin")
             elseif uppercase(vary_param) == "WIDTH"
                 ymin *= 2
@@ -45,6 +46,7 @@ function run_simulation(;uID,startB,vary_param,num_vary,
             elseif uppercase(vary_param) == "AREA"
                 xmin *= 2
                 ymin *= 2
+                rep_grain *= 2
                 println("Running simulation with area = $(xmin*ymin)")
             elseif uppercase(vary_param) == "TOL"
                 tol *= 0.1

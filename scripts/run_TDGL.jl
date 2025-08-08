@@ -3,7 +3,7 @@ using HDF5
 
 function run_simulation(;uID,startB,stopB,stepB,
     pixels_per_xi,AA_factor,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
-    Ecrit,Jramp,holdtime,init_hold,N_value,N_crystal,thickness,
+    Ecrit,Jramp,holdtime,init_hold,N_value,rep_grain,thickness,
     xmin,ymin,yperiodic,alphaN,betaN,backend,kwargs...)
     init_time = time()
 
@@ -21,7 +21,7 @@ function run_simulation(;uID,startB,stopB,stepB,
 
     FindType = JC2DFinder
     finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(
-    pixels_per_xi,AA_factor,N_value,N_crystal,thickness,
+    pixels_per_xi,AA_factor,N_value,rep_grain,thickness,
     tstep,GL,conductivity,norm_resist,norm_mass,
     Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
     yperiodic,alphaN,betaN,FindType,levelcount,tol,backend,
@@ -50,7 +50,7 @@ function run_simulation(;uID,startB,stopB,stepB,
         #iterate through B fields, recording data and shot-specific metadata
         for B in B_range
             finder, α, β, m⁻¹,σ = simulation_setup(
-            pixels_per_xi,AA_factor,N_value,N_crystal,thickness,
+            pixels_per_xi,AA_factor,N_value,rep_grain,thickness,
             tstep,GL,conductivity,norm_resist,norm_mass,
             Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
             yperiodic,alphaN,betaN,FindType,levelcount,tol,backend,

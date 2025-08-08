@@ -150,8 +150,8 @@ function parse_CL()
             arg_type = Int64
             default = 2
 
-        "--N_crystal"
-            help = "Multiply number of crystal grains in the grid by 2^N_crystal. When N_crystal=0, number of crystal grains ≈ 4"
+        "--rep_grain"
+            help = "Number of times grain structure is repeated in simulation domain. Must be a factor of --xmin"
             arg_type = Int64
             default = 0
 
