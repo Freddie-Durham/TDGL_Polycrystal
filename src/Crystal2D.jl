@@ -122,3 +122,14 @@ function apply_pattern(shape,init_val,new_val,pixels,factor,grain_size,grain_thi
 
     return lower_resolution(init_grid,factor)
 end
+
+"Apply tesselating pattern to a grid at high resolution then return anti-aliased scaled down version"
+function apply_pattern(init_val,new_val,pixels,factor,junc_thick,xlen,ylen,veclen)
+    init_grid = init_val*ones(Float64,veclen)
+
+    half_x = fld(xlen,2)
+    junc_thick_xi = fld(junc_thick*pixels,2)
+    init_grid[half_x-junc_thick_xi:half_x+junc_thick_xi,end - fld(ylen,3):end] .= new_val
+    init_grid[half_x-junc_thick_xi:half_x+junc_thick_xi,1:fld(ylen,3)] .= new_val    
+    return init_grid
+end

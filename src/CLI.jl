@@ -183,7 +183,17 @@ function parse_CL()
         "--betaN"
             help = "TDGL nonlinearity parameter for the normal state material"
             arg_type = Float64
-            default = 1.0      
+            default = 1.0     
+            
+        "--init_alpha"
+            help = "TDGL condensation parameter for the superconducting material"
+            arg_type = Float64
+            default = 1.0
+
+        "--init_beta"
+            help = "TDGL nonlinearity parameter for the superconducting material"
+            arg_type = Float64
+            default = 1.0 
         
         "--backend"
             help = "Type of hardware the simulation will be run on (eg. CPU, CUDA etc.)"

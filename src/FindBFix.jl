@@ -24,6 +24,8 @@ function Bfixed(solver, ecrit::R, shortholdtime, longholdtime, jinit::R, jrelste
     δda_rhs = MulTDGL.similar(MulTDGL.state(solver).a)
     data(δda_rhs) .= zero(eltype(data(δda_rhs)))
 
+    #we set the initial current to be jrelstep to allow non-zero initial current
+
     Bfixed(solver,
         mode,
         ecrit,
@@ -32,7 +34,7 @@ function Bfixed(solver, ecrit::R, shortholdtime, longholdtime, jinit::R, jrelste
         timesteps,
         curholdsteps,
         max_steps,
-        jinit,
+        abs(jrelstep),
         abs(jrelstep),
         e_field,
         startB,
@@ -54,24 +56,6 @@ function step!(finder::Bfixed)
 
     finder.timesteps += 1
     finder.curholdsteps += 1
-
-    if finder.mode == JC2DInitHold()
-        if finder.curholdsteps >= finder.shortholdtime / parameters.k
-            finder.curholdsteps = 0
-            finder.mode = JC2DJHold()
-        end
-    elseif finder.mode == JC2DJHold()
-        if finder.E_field < finder.ecrit
-            finder.j += finder.jrelstep
-            finder.curholdsteps = 0
-        elseif finder.curholdsteps >= finder.longholdtime / parameters.k
-            finder.mode = BVarLinX()
-        end
-    elseif finder.mode == BVarLinX() 
-        if finder.curholdsteps > finder.max_steps
-            finder.mode = JC2DDone()
-        end
-    end
 end
 
 function find_jc(f_jc::Bfixed,verbose::Bool=true)

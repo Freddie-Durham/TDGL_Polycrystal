@@ -86,8 +86,7 @@ function get_state(n0,n1,m,backend)
     return MulTDGL.State(ψ, a, φ)
 end
 
-
-"Setup material using Crystal2D according to Carty(2008)"
+"Setup material using Crystal2D according to Carty(2008) - 2D slice of truncated octahedra"
 function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,factor,grain_size,crystalangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,m,backend)
     #apply pattern to normalised α value
     start_α = apply_pattern(octagon!,init_α,alphaN,pixels,factor,grain_size,grain_thick,crystalangle,m.extent[1],m.extent[2],elemextent(m, ()))
@@ -116,9 +115,31 @@ function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,factor,grain_si
     return MulTDGL.Material(α, β, m⁻¹, σ),start_α,start_β,start_m⁻¹,start_σ
 end
 
+"Set up single Josephson junction material pattern"
+function set_material(init_α,init_β,init_m⁻¹,init_σ,pixels,factor,grain_size,crystalangle,junc_thick,norm_resist,norm_mass,alphaN,betaN,m,backend)
+    #apply pattern to normalised α value
+    start_α = apply_pattern(init_α,alphaN,pixels,factor,junc_thick,m.extent[1],m.extent[2],elemextent(m, ()))
+    α = RectPrimalForm0Data(m, adapt(backend, reshape(start_α, :)))
+    
+    #need two lots of conductivity for x and y 
+    start_σ = apply_pattern(init_σ,1/norm_resist,pixels,factor,junc_thick,m.extent[1],m.extent[2],elemextent(m, (1,)))
+    start_2σ = apply_pattern(init_σ,1/norm_resist,pixels,factor,junc_thick,m.extent[1],m.extent[2],elemextent(m, (2,)))
+    σ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_σ, :),reshape(start_2σ, :)))) 
+
+    #same goes for reciprocal mass
+    start_m⁻¹ = apply_pattern(init_m⁻¹,1/norm_mass,pixels,factor,junc_thick,m.extent[1],m.extent[2],elemextent(m, (1,)))
+    start_2m⁻¹ = apply_pattern(init_m⁻¹,1/norm_mass,pixels,factor,junc_thick,m.extent[1],m.extent[2],elemextent(m, (2,)))
+    m⁻¹ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_m⁻¹, :),reshape(start_2m⁻¹, :)))) 
+
+    #can also change β but often not necessary
+    start_β = apply_pattern(init_β,betaN,pixels,factor,junc_thick,m.extent[1],m.extent[2],elemextent(m, ()))
+    β = RectPrimalForm0Data(m, adapt(backend, reshape(start_β, :)))
+    
+    return MulTDGL.Material(α, β, m⁻¹, σ),start_α,start_β,start_m⁻¹,start_σ
+end
 
 "Set up parameters of simulation using CUDA"
-function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,finder,levelcount,tol,bknd,B_init,args...)
+function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,init_alpha,init_beta,finder,levelcount,tol,bknd,B_init,args...)
     if bknd == "CUDA"
         backend = CUDABackend() # for NVIDIA GPUs
     elseif bknd == "AMDGPU"
@@ -141,10 +162,9 @@ function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,
     n1 = elemcount(mesh, Val(1)) # number of edges
     n2 = elemcount(mesh, Val(2)) # number of faces
 
-    init_α = 1.0
-    init_β = 1.0
     init_m⁻¹ = 1.0
-    material,start_α,start_β,start_m⁻¹,start_σ = get_material(init_α,init_β,init_m⁻¹,init_σ,vortex_radius,factor,grain_diameter,grainangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,mesh,backend)
+    material,start_α,start_β,start_m⁻¹,start_σ = get_material(init_alpha,init_beta,init_m⁻¹,init_σ,vortex_radius,factor,grain_diameter,grainangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,mesh,backend)
+    #material,start_α,start_β,start_m⁻¹,start_σ = set_material(init_alpha,init_beta,init_m⁻¹,init_σ,vortex_radius,factor,grain_diameter,grainangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,mesh,backend)
 
     system = jc2d_system(n1,n2,mesh,params,material,backend,B_init)
     state = get_state(n0,n1,mesh,backend)
@@ -156,9 +176,9 @@ function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,
 
     metadata = Dict("Timestep" => tstep, "κ" => GL, "xMesh" => mesh.extent[1],
     "yMesh" => mesh.extent[2], "Vortex radius (pixels)" => vortex_radius, "xPeriodic" => string(mesh.periodic[1]),
-    "yPeriodic" => string(mesh.periodic[2]), "Tolerance" => tol, "Multigrid steps" => levelcount, 
-    "α" => init_α, "β" => init_β, "Effective electron mass" => norm_mass, "Normal resistivity" => norm_resist,
-    "α_N" => alphaN, "β_N" => betaN,
+    "yPeriodic" => string(mesh.periodic[2]), "Tolerance" => tol, "Multigrid steps" => levelcount,
+    "α_s" => init_alpha, "β_s" => init_beta, "Effective electron mass" => norm_mass, "Normal resistivity" => norm_resist,
+    "α_n" => alphaN, "β_n" => betaN,
     "Grain size (ξ)" => grain_diameter,"Multiple of grains" => rep_grain,"Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
     "Lattice angle" => grainangle,  "J ramp" => Jramp, "E criterion" => Ecrit, "Grain Boundary Thickness (ξ)" => grain_thick,
     "Date" => string(now()), "Backend" => bknd, "Finder" => string(finder),"MulTDGL Version no." => string(pkgversion(MulTDGL)),
