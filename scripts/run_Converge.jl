@@ -51,6 +51,9 @@ function run_simulation(;uID,startB,vary_param,num_vary,
             elseif uppercase(vary_param) == "TOL"
                 tol *= 0.1
                 println("Running simulation with tolerance = $tol")
+            elseif uppercase(vary_param) == "HOLD"
+                holdtime *= 2
+                println("Running simulation with hold time = $holdtime")
             else
                 println("Could not identify parameter: "*vary_param)
                 break

@@ -14,6 +14,7 @@ mutable struct Bfixed{R,VR,VC} <: Finder
     E_field::R
     B_field::R
     δda_rhs::RectPrimalForm1Data{2,R,VR}
+    a_prev::RectPrimalForm1Data{2,R,VR}
 end
 
 function Bfixed(solver, ecrit::R, shortholdtime, longholdtime, jinit::R, jrelstep::R, startB::R, max_steps) where {R}
@@ -39,12 +40,15 @@ function Bfixed(solver, ecrit::R, shortholdtime, longholdtime, jinit::R, jrelste
         e_field,
         startB,
         δda_rhs,
+        δda_rhs
         )
 end
 
 function step!(finder::Bfixed)
     sys = system(finder)
     parameters = sys.p
+
+    finder.a_prev = state(finder).a
 
     #update boundary conditions
     jc2d_bcs!(finder,sys)
