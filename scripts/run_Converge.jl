@@ -8,7 +8,7 @@ function run_simulation(;uID,startB,vary_param,num_vary,
     FindType = JC2DFinder
 
     path = "outputs/$(uID)_"*vary_param*"_converge/"
-    name = "$(uID)B-"*to_string(startB)
+    name = uID
     TDGL_Polycrystal.make_path(path)
     total_time = 0
 
