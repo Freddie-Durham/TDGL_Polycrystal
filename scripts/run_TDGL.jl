@@ -49,12 +49,8 @@ function run_simulation(;uID,startB,stopB,stepB,
     
         #iterate through B fields, recording data and shot-specific metadata
         for B in B_range
-            finder, α, β, m⁻¹,σ = simulation_setup(
-            pixels_per_xi,AA_factor,N_value,rep_grain,thickness,
-            tstep,GL,conductivity,norm_resist,norm_mass,
-            Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
-            yperiodic,alphaN,betaN,init_alpha,init_beta,FindType,levelcount,tol,backend,
-            B)
+            finder = TDGL_Polycrystal.new_finder(
+            finder,FindType,Ecrit,holdtime,init_hold,Jramp,B,tol,levelcount,backend)
 
             println("Running simulation with B = $(B)")
             sim_data, timetaken = find_jc(finder)

@@ -138,17 +138,22 @@ function set_material(init_α,init_β,init_m⁻¹,init_σ,pixels,factor,grain_si
     return MulTDGL.Material(α, β, m⁻¹, σ),start_α,start_β,start_m⁻¹,start_σ
 end
 
-"Set up parameters of simulation using CUDA"
-function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,init_alpha,init_beta,finder,levelcount,tol,bknd,B_init,args...)
-    if bknd == "CUDA"
-        backend = CUDABackend() # for NVIDIA GPUs
-    elseif bknd == "AMDGPU"
-        backend = AMDGPUBackend() # for AMD GPUs
-    elseif bknd == "CPU"
-        backend = CPU() # for CPU
+"Convert string to type of backend"
+function get_backend(bknd)
+    if uppercase(bknd) == "CUDA"
+        return CUDABackend() # for NVIDIA GPUs
+    elseif uppercase(bknd) == "AMDGPU"
+        return AMDGPUBackend() # for AMD GPUs
+    elseif uppercase(bknd) == "CPU"
+        return CPU() # for CPU
     else
         error("Backend:$bknd not found")
     end
+end
+
+"Set up parameters of simulation using CUDA"
+function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,init_alpha,init_beta,finder,levelcount,tol,bknd,B_init,args...)
+    backend = get_backend(bknd)
 
     #setup grain size and orientation to ensure periodicity
     grainangle,grain_diameter = periodic_crystal(N,fld(xdim,rep_grain))
@@ -186,3 +191,22 @@ function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,
 
     return f_jc,metadata,start_α,start_β,start_m⁻¹,start_σ
 end
+
+"set the B field of the system in the solver and reset the solver state"
+function new_solver(solver,B_field,tol,levelcount,backend)
+    old_sys = MulTDGL.system(solver)
+    mesh = old_sys.m
+    n0 = elemcount(mesh, Val(0)) # number of vertices
+    n1 = elemcount(mesh, Val(1)) # number of edges
+    n2 = elemcount(mesh, Val(2)) # number of faces
+    state = get_state(n0,n1,mesh,backend)
+    system = jc2d_system(n1,n2,mesh,old_sys.p,old_sys.mat,backend,B_field)
+    return MulTDGL.ImplicitLondonMultigridSolver(system, state, tol, levelcount)
+end
+
+"Create a new finder for a new B field and applied current density"
+function new_finder(F::Finder,finder,Ecrit,wait_time,init_hold_time,Jramp,B_init,tol,levelcount,backend,args...)
+    s = new_solver(F.solver,B_init,tol,levelcount,get_backend(backend))
+    return finder(s,Ecrit,init_hold_time,wait_time,0.0,Jramp,B_init,args...)
+end
+
