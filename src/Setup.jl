@@ -185,7 +185,7 @@ function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,
     "α_n" => alphaN, "β_n" => betaN,
     "Grain size (ξ)" => grain_diameter,"Multiple of grains" => rep_grain,"Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
     "Lattice angle" => grainangle,  "J ramp" => Jramp, "E criterion" => Ecrit, "Grain Boundary Thickness (ξ)" => grain_thick,
-    "Date" => string(now()), "Backend" => bknd, "Finder" => string(finder),"MulTDGL Version no." => string(pkgversion(MulTDGL)),
+    "Date" => string(now()), "Backend" => bknd, "Random seed" => rng_seed,"Finder" => string(finder),"MulTDGL Version no." => string(pkgversion(MulTDGL)),
     "TDGL_Polycrystal Version no." => Version)
 
     return f_jc,metadata,start_α,start_β,start_m⁻¹,start_σ
