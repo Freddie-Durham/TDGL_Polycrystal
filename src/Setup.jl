@@ -74,12 +74,11 @@ function get_mesh(pixels,xdim,ydim,yperiodic)
     return MulTDGL.RectMesh(extent, periodic, h)
 end
 
-
 "Returns a state for a 2D system"
-function get_state(n0,n1,m,backend)
+function get_state(n0,n1,m,backend,seed)
     # initial state
-    ψdata = Adapt.adapt(backend, exp.(2π * im .* rand(Float64, n0)))
-    ψ = RectPrimalForm0Data(m, ψdata)                          # wavefunction with random phase
+    ψdata = Adapt.adapt(backend, exp.(2π * im .* rand(Xoshiro(seed), Float64, n0)))
+    ψ = RectPrimalForm0Data(m, ψdata)        # wavefunction with random phase (same every time function is called)
     a = RectPrimalForm1Data(m, KernelAbstractions.zeros(backend, Float64, n1))
     φ = RectPrimalForm0Data(m, KernelAbstractions.zeros(backend, Float64, n0))
 
@@ -152,7 +151,7 @@ function get_backend(bknd)
 end
 
 "Set up parameters of simulation using CUDA"
-function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,init_alpha,init_beta,finder,levelcount,tol,bknd,B_init,args...)
+function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,init_alpha,init_beta,finder,levelcount,tol,bknd,rng_seed,B_init,args...)
     backend = get_backend(bknd)
 
     #setup grain size and orientation to ensure periodicity
@@ -172,7 +171,7 @@ function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,
     #material,start_α,start_β,start_m⁻¹,start_σ = set_material(init_alpha,init_beta,init_m⁻¹,init_σ,vortex_radius,factor,grain_diameter,grainangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,mesh,backend)
 
     system = jc2d_system(n1,n2,mesh,params,material,backend,B_init)
-    state = get_state(n0,n1,mesh,backend)
+    state = get_state(n0,n1,mesh,backend,rng_seed)
 
     # create simulation
     s = MulTDGL.ImplicitLondonMultigridSolver(system, state, tol, levelcount)
@@ -193,20 +192,20 @@ function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,
 end
 
 "set the B field of the system in the solver and reset the solver state"
-function new_solver(solver,B_field,tol,levelcount,backend)
+function new_solver(solver,B_field,tol,levelcount,backend,rng)
     old_sys = MulTDGL.system(solver)
     mesh = old_sys.m
     n0 = elemcount(mesh, Val(0)) # number of vertices
     n1 = elemcount(mesh, Val(1)) # number of edges
     n2 = elemcount(mesh, Val(2)) # number of faces
-    state = get_state(n0,n1,mesh,backend)
+    state = get_state(n0,n1,mesh,backend,rng)
     system = jc2d_system(n1,n2,mesh,old_sys.p,old_sys.mat,backend,B_field)
     return MulTDGL.ImplicitLondonMultigridSolver(system, state, tol, levelcount)
 end
 
 "Create a new finder for a new B field and applied current density"
-function new_finder(F::Finder,finder,Ecrit,wait_time,init_hold_time,Jramp,B_init,tol,levelcount,backend,args...)
-    s = new_solver(F.solver,B_init,tol,levelcount,get_backend(backend))
+function new_finder(F::Finder,finder,Ecrit,wait_time,init_hold_time,Jramp,B_init,tol,levelcount,backend,rng,args...)
+    s = new_solver(F.solver,B_init,tol,levelcount,get_backend(backend),rng)
     return finder(s,Ecrit,init_hold_time,wait_time,0.0,Jramp,B_init,args...)
 end
 

@@ -3,7 +3,7 @@ using TDGL_Polycrystal
 function run_simulation(;uID,startB,max_steps,
     pixels_per_xi,AA_factor,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
     Ecrit,Jramp,holdtime,init_hold,N_value,rep_grain,thickness,
-    xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,kwargs...)
+    xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,kwargs...)
     
     FindType = Bfixed
 
@@ -12,7 +12,7 @@ function run_simulation(;uID,startB,max_steps,
     tstep,GL,conductivity,norm_resist,norm_mass,
     Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
     yperiodic,alphaN,betaN,init_alpha,init_beta,FindType,levelcount,
-    tol,backend,
+    tol,backend,rng_seed,
     startB,max_steps) #<- last line contains arguments specific to FindType
 
     path = "outputs/$(uID)Efix/"

@@ -3,7 +3,7 @@ using TDGL_Polycrystal
 function run_simulation(;uID,startB,vary_param,num_vary,
     pixels_per_xi,AA_factor,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
     Ecrit,Jramp,holdtime,init_hold,N_value,rep_grain,thickness,
-    xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,kwargs...)
+    xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,kwargs...)
     
     FindType = JC2DFinder
 
@@ -18,7 +18,7 @@ function run_simulation(;uID,startB,vary_param,num_vary,
         tstep,GL,conductivity,norm_resist,norm_mass,
         Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
         yperiodic,alphaN,betaN,init_alpha,init_beta,FindType,levelcount,
-        tol,backend,
+        tol,backend,rng_seed,
         startB) #<- last line contains arguments specific to FindType
 
         fullname = name*"_"*uppercase(vary_param)*"-$i"
@@ -54,6 +54,9 @@ function run_simulation(;uID,startB,vary_param,num_vary,
             elseif uppercase(vary_param) == "HOLD"
                 holdtime *= 2
                 println("Running simulation with hold time = $holdtime")
+            elseif uppercase(vary_param) == "RNG"
+                rng_seed += 1
+                println("Running simulation with rng seed = $rng_seed")
             else
                 println("Could not identify parameter: "*vary_param)
                 break

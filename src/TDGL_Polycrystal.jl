@@ -8,8 +8,9 @@ using HDF5
 using Adapt
 using ArgParse
 using CUDA
+using Random
 
-const Version = "0.1.3" 
+const Version = "0.1.4" 
 
 include("Defs.jl")
 include("Utilities.jl")

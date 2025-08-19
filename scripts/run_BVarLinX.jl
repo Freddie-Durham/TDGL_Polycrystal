@@ -4,8 +4,8 @@ using TDGL_Polycrystal
 function run_simulation(;uID,startB,stopB,stepB,num_samples,
     pixels_per_xi,AA_factor,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
     Ecrit,Jramp,holdtime,init_hold,N_value,rep_grain,thickness,
-    xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,kwargs...)
-    
+    xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,kwargs...)
+
     FindType = BVarLinXFinder
 
     finder, metadata, start_α, start_β, start_m⁻¹,start_σ = simulation_setup(
@@ -13,7 +13,7 @@ function run_simulation(;uID,startB,stopB,stepB,num_samples,
     tstep,GL,conductivity,norm_resist,norm_mass,
     Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
     yperiodic,alphaN,betaN,init_alpha,init_beta,FindType,levelcount,
-    tol,backend,
+    tol,backend,rng_seed,
     startB,stopB,stepB,num_samples) #<- last line contains arguments specific to FindType
 
     path = "outputs/$(uID)LinX/"

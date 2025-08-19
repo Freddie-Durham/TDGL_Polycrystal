@@ -214,6 +214,11 @@ function parse_CL()
             help = "Debug setting, determine number of simulations to run when varying --vary_param"
             arg_type = Int64
             default = 1
+
+        "--rng_seed"
+            help = "Seed for the random number generator, used to generate the initial state of the system"
+            arg_type = Int64
+            default = 1
     end
     return parse_args(s,as_symbols=true)
 end

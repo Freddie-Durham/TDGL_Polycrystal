@@ -4,7 +4,7 @@ using HDF5
 function run_simulation(;uID,startB,stopB,stepB,
     pixels_per_xi,AA_factor,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
     Ecrit,Jramp,holdtime,init_hold,N_value,rep_grain,thickness,
-    xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,kwargs...)
+    xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,kwargs...)
     init_time = time()
 
     stopB = startB + stopB
@@ -22,9 +22,9 @@ function run_simulation(;uID,startB,stopB,stepB,
     FindType = JC2DFinder
     finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(
     pixels_per_xi,AA_factor,N_value,rep_grain,thickness,
-    tstep,GL,conductivity,norm_resist,norm_mass,
-    Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
-    yperiodic,alphaN,betaN,init_alpha,init_beta,FindType,levelcount,tol,backend,
+    tstep,GL,conductivity,norm_resist,norm_mass,Ecrit,Jramp,
+    holdtime,init_hold,xmin,ymin,yperiodic,
+    alphaN,betaN,init_alpha,init_beta,FindType,levelcount,tol,backend,rng_seed,
     B_range[1])
 
     path = "outputs/"
@@ -50,7 +50,7 @@ function run_simulation(;uID,startB,stopB,stepB,
         #iterate through B fields, recording data and shot-specific metadata
         for B in B_range
             finder = TDGL_Polycrystal.new_finder(
-            finder,FindType,Ecrit,holdtime,init_hold,Jramp,B,tol,levelcount,backend)
+            finder,FindType,Ecrit,holdtime,init_hold,Jramp,B,tol,levelcount,backend,rng_seed)
 
             println("Running simulation with B = $(B)")
             sim_data, timetaken = find_jc(finder)
