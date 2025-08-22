@@ -204,8 +204,8 @@ function new_solver(solver,B_field,tol,levelcount,backend,rng)
 end
 
 "Create a new finder for a new B field and applied current density"
-function new_finder(F::Finder,finder,Ecrit,wait_time,init_hold_time,Jramp,B_init,tol,levelcount,backend,rng,args...)
+function new_finder(F::Finder,findtype,Ecrit,wait_time,init_hold_time,Jramp,B_init,tol,levelcount,backend,rng,args...)
     s = new_solver(F.solver,B_init,tol,levelcount,get_backend(backend),rng)
-    return finder(s,Ecrit,init_hold_time,wait_time,0.0,Jramp,B_init,args...)
+    return findtype(s,Ecrit,init_hold_time,wait_time,0.0,Jramp,B_init,args...)
 end
 
