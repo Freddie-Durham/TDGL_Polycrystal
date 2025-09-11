@@ -48,6 +48,18 @@ function issafe(index,maxval,minval=0)
     end
 end
 
+"Returns true if index is within dimensions of grid"
+is_safe(ind,dims) = all(map((x,y)-> x>0 && x<=y,ind,dims))
+
+"Linear interpolation between min_val and max_val with val between 0 and 1"
+linear_interp(min_val,max_val,val) = min_val + (max_val-min_val)*val
+
+"init_val: starting value of the pixel, max_val: maximum value of the pixel, new_val: value between 0 and 1 to interpolate, cur_val: current value of the pixel"
+function set_value!(init_val,max_val,new_val,cur_val)
+    val = linear_interp(init_val,max_val,new_val)
+    return min(cur_val+val,max_val)
+end
+
 "Linear interpolate. Returns value between 0 and 1"
 function lerp(min,max,val) 
     return (val-min)/(max-min)

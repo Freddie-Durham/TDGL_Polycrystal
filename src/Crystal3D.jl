@@ -197,7 +197,7 @@ function visualise_BCC!(grid,pos,dims,value)
     end
 end
 
-"Rotate and tesselate 3D object throughout domain"
+"Rotate and tesselate 3D object (truncated octahedron) throughout domain"
 function tesselateOct!(grid,dims,q::Quaternion,size,thickness=1,value=2)
     start_pos = dims./2
 
@@ -233,7 +233,7 @@ function tesselateOct!(grid,dims,q::Quaternion,size,thickness=1,value=2)
     end
 end
 
-"Rotate and tesselate 3D object throughout domain"
+"Rotate and tesselate 3D object (cube) throughout domain"
 function tesselateCube!(grid,dims,q::Quaternion,edge_len,thickness=1,value=2)
     start_pos = [0.0,0.0,0.0]
 

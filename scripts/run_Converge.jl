@@ -7,6 +7,7 @@ function run_simulation(;uID,startB,vary_param,num_vary,
     xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,kwargs...)
 
     FindType = JC2DFinder
+    pattern = TDGL_Polycrystal.TruncOct(N_value,xmin,rep_grain,thickness,AA_factor)
 
     path = "outputs/$(uID)_"*vary_param*"_converge/"
     TDGL_Polycrystal.make_path(path)
@@ -15,13 +16,11 @@ function run_simulation(;uID,startB,vary_param,num_vary,
     if uppercase(vary_param) == "RNG"
         fullname = uID*"RNGseed"
 
-        finder, metadata, start_α, start_β, start_m⁻¹,start_σ = simulation_setup(
-            pixels_per_xi,AA_factor,N_value,rep_grain,thickness,
-            tstep,GL,conductivity,norm_resist,norm_mass,
-            Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
-            yperiodic,alphaN,betaN,init_alpha,init_beta,FindType,levelcount,
-            tol,backend,rng_seed,
-            startB)
+        finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(
+        pixels_per_xi,pattern,tstep,GL,conductivity,norm_resist,norm_mass,Ecrit,Jramp,
+        holdtime,init_hold,xmin,ymin,yperiodic,
+        alphaN,betaN,init_alpha,init_beta,FindType,levelcount,tol,backend,rng_seed,
+        startB)
 
         save_metadata(path,fullname,metadata,start_α,start_β,start_m⁻¹,start_σ)
         println("Setup Complete.")
@@ -46,12 +45,10 @@ function run_simulation(;uID,startB,vary_param,num_vary,
     else
 
         for i in 1:num_vary
-            finder, metadata, start_α, start_β, start_m⁻¹,start_σ = simulation_setup(
-            pixels_per_xi,AA_factor,N_value,rep_grain,thickness,
-            tstep,GL,conductivity,norm_resist,norm_mass,
-            Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
-            yperiodic,alphaN,betaN,init_alpha,init_beta,FindType,levelcount,
-            tol,backend,rng_seed,
+            finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(
+            pixels_per_xi,pattern,tstep,GL,conductivity,norm_resist,norm_mass,Ecrit,Jramp,
+            holdtime,init_hold,xmin,ymin,yperiodic,
+            alphaN,betaN,init_alpha,init_beta,FindType,levelcount,tol,backend,rng_seed,
             startB) #<- last line contains arguments specific to FindType
 
             fullname = uID*"_"*uppercase(vary_param)*"-$i"
@@ -72,6 +69,7 @@ function run_simulation(;uID,startB,vary_param,num_vary,
                 elseif uppercase(vary_param) == "LENGTH"
                     xmin *= 2
                     rep_grain *= 2
+                    pattern = TDGL_Polycrystal.TruncOct(N_value,xmin,rep_grain,thickness,AA_factor)
                     println("Running simulation with length = $xmin")
                 elseif uppercase(vary_param) == "WIDTH"
                     ymin *= 2
@@ -80,6 +78,7 @@ function run_simulation(;uID,startB,vary_param,num_vary,
                     xmin *= 2
                     ymin *= 2
                     rep_grain *= 2
+                    pattern = TDGL_Polycrystal.TruncOct(N_value,xmin,rep_grain,thickness,AA_factor)
                     println("Running simulation with area = $(xmin*ymin)")
                 elseif uppercase(vary_param) == "TOL"
                     tol *= 0.1

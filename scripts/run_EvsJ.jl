@@ -7,13 +7,12 @@ function run_simulation(;uID,startB,max_steps,
     xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,profil,kwargs...)
 
     FindType = EvsJ
+    pattern = TDGL_Polycrystal.TruncOct(N_value,xmin,rep_grain,thickness,AA_factor)
 
-    finder, metadata, start_α, start_β, start_m⁻¹,start_σ = simulation_setup(
-    pixels_per_xi,AA_factor,N_value,rep_grain,thickness,
-    tstep,GL,conductivity,norm_resist,norm_mass,
-    Ecrit,Jramp,holdtime,init_hold,xmin,ymin,
-    yperiodic,alphaN,betaN,init_alpha,init_beta,FindType,levelcount,
-    tol,backend,rng_seed,
+    finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(
+    pixels_per_xi,pattern,tstep,GL,conductivity,norm_resist,norm_mass,Ecrit,Jramp,
+    holdtime,init_hold,xmin,ymin,yperiodic,
+    alphaN,betaN,init_alpha,init_beta,FindType,levelcount,tol,backend,rng_seed,
     startB,max_steps) #<- last line contains arguments specific to FindType
 
     if profil

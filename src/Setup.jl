@@ -86,11 +86,12 @@ function get_state(n0,n1,m,backend,seed)
 end
 
 "Setup material using Crystal2D according to Carty(2008) - 2D slice of truncated octahedra"
-function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,factor,grain_size,crystalangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,m,backend)
+function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,pattern,norm_resist,norm_mass,alphaN,betaN,m,backend)
     #apply pattern to normalised α value
-    start_α = apply_pattern(octagon!,init_α,alphaN,pixels,factor,grain_size,grain_thick,crystalangle,m.extent[1],m.extent[2],elemextent(m, ()))
+    start_α = apply_pattern(pattern,init_α,alphaN,pixels,elemextent(m, ()))
+
     #apply coating if non-periodic in y direction
-    if m.periodic[1] && !m.periodic[2]
+    if m.periodic[1] && !m.periodic[2] && typeof(pattern) == TDGL_Polycrystal.TruncOct
         thickness = Int(7.5*pixels)
         start_α[:,1:thickness] .= alphaN
         start_α[:,end-thickness:end] .= alphaN
@@ -98,40 +99,17 @@ function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,factor,grain_si
     α = RectPrimalForm0Data(m, adapt(backend, reshape(start_α, :)))
     
     #need two lots of conductivity for x and y 
-    start_σ = apply_pattern(octagon!,init_σ,1/norm_resist,pixels,factor,grain_size,grain_thick,crystalangle,m.extent[1],m.extent[2],elemextent(m, (1,)))
-    start_2σ = apply_pattern(octagon!,init_σ,1/norm_resist,pixels,factor,grain_size,grain_thick,crystalangle,m.extent[1],m.extent[2],elemextent(m, (2,)))
+    start_σ = apply_pattern(pattern,init_σ,1/norm_resist,pixels,elemextent(m, (1,)))
+    start_2σ = apply_pattern(pattern,init_σ,1/norm_resist,pixels,elemextent(m, (2,)))
     σ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_σ, :),reshape(start_2σ, :)))) 
 
     #same goes for reciprocal mass
-    start_m⁻¹ = apply_pattern(octagon!,init_m⁻¹,1/norm_mass,pixels,factor,grain_size,grain_thick,crystalangle,m.extent[1],m.extent[2],elemextent(m, (1,)))
-    start_2m⁻¹ = apply_pattern(octagon!,init_m⁻¹,1/norm_mass,pixels,factor,grain_size,grain_thick,crystalangle,m.extent[1],m.extent[2],elemextent(m, (2,)))
+    start_m⁻¹ = apply_pattern(pattern,init_m⁻¹,1/norm_mass,pixels,elemextent(m, (1,)))
+    start_2m⁻¹ = apply_pattern(pattern,init_m⁻¹,1/norm_mass,pixels,elemextent(m, (2,)))
     m⁻¹ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_m⁻¹, :),reshape(start_2m⁻¹, :)))) 
 
     #can also change β but often not necessary
-    start_β = apply_pattern(octagon!,init_β,betaN,pixels,factor,grain_size,grain_thick,crystalangle,m.extent[1],m.extent[2],elemextent(m, ()))
-    β = RectPrimalForm0Data(m, adapt(backend, reshape(start_β, :)))
-    
-    return MulTDGL.Material(α, β, m⁻¹, σ),start_α,start_β,start_m⁻¹,start_σ
-end
-
-"Set up single Josephson junction material pattern"
-function set_material(init_α,init_β,init_m⁻¹,init_σ,pixels,factor,grain_size,crystalangle,junc_thick,norm_resist,norm_mass,alphaN,betaN,m,backend)
-    #apply pattern to normalised α value
-    start_α = apply_pattern(init_α,alphaN,pixels,factor,junc_thick,m.extent[1],m.extent[2],elemextent(m, ()))
-    α = RectPrimalForm0Data(m, adapt(backend, reshape(start_α, :)))
-    
-    #need two lots of conductivity for x and y 
-    start_σ = apply_pattern(init_σ,1/norm_resist,pixels,factor,junc_thick,m.extent[1],m.extent[2],elemextent(m, (1,)))
-    start_2σ = apply_pattern(init_σ,1/norm_resist,pixels,factor,junc_thick,m.extent[1],m.extent[2],elemextent(m, (2,)))
-    σ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_σ, :),reshape(start_2σ, :)))) 
-
-    #same goes for reciprocal mass
-    start_m⁻¹ = apply_pattern(init_m⁻¹,1/norm_mass,pixels,factor,junc_thick,m.extent[1],m.extent[2],elemextent(m, (1,)))
-    start_2m⁻¹ = apply_pattern(init_m⁻¹,1/norm_mass,pixels,factor,junc_thick,m.extent[1],m.extent[2],elemextent(m, (2,)))
-    m⁻¹ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_m⁻¹, :),reshape(start_2m⁻¹, :)))) 
-
-    #can also change β but often not necessary
-    start_β = apply_pattern(init_β,betaN,pixels,factor,junc_thick,m.extent[1],m.extent[2],elemextent(m, ()))
+    start_β = apply_pattern(pattern,init_β,betaN,pixels,elemextent(m, ()))
     β = RectPrimalForm0Data(m, adapt(backend, reshape(start_β, :)))
     
     return MulTDGL.Material(α, β, m⁻¹, σ),start_α,start_β,start_m⁻¹,start_σ
@@ -151,11 +129,8 @@ function get_backend(bknd)
 end
 
 "Set up parameters of simulation using CUDA"
-function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,init_alpha,init_beta,finder,levelcount,tol,bknd,rng_seed,B_init,args...)
+function simulation_setup(vortex_radius,pattern,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,init_alpha,init_beta,finder,levelcount,tol,bknd,rng_seed,B_init,args...)
     backend = get_backend(bknd)
-
-    #setup grain size and orientation to ensure periodicity
-    grainangle,grain_diameter = periodic_crystal(N,fld(xdim,rep_grain))
 
     #get parameters + material, setup the SC system. Create initial state of system and initialise solver. Return solver along with BCs
     params = get_params(tstep,GL)
@@ -167,9 +142,9 @@ function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,
     n2 = elemcount(mesh, Val(2)) # number of faces
 
     init_m⁻¹ = 1.0
-    material,start_α,start_β,start_m⁻¹,start_σ = get_material(init_alpha,init_beta,init_m⁻¹,init_σ,vortex_radius,factor,grain_diameter,grainangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,mesh,backend)
-    #material,start_α,start_β,start_m⁻¹,start_σ = set_material(init_alpha,init_beta,init_m⁻¹,init_σ,vortex_radius,factor,grain_diameter,grainangle,grain_thick,norm_resist,norm_mass,alphaN,betaN,mesh,backend)
-
+    material,start_α,start_β,start_m⁻¹,start_σ = get_material(
+        init_alpha,init_beta,init_m⁻¹,init_σ,vortex_radius,pattern,norm_resist,norm_mass,alphaN,betaN,mesh,backend)
+    
     system = jc2d_system(n1,n2,mesh,params,material,backend,B_init)
     state = get_state(n0,n1,mesh,backend,rng_seed)
 
@@ -182,11 +157,12 @@ function simulation_setup(vortex_radius,factor,N,rep_grain,grain_thick,tstep,GL,
     "yMesh" => mesh.extent[2], "Vortex radius (pixels)" => vortex_radius, "xPeriodic" => string(mesh.periodic[1]),
     "yPeriodic" => string(mesh.periodic[2]), "Tolerance" => tol, "Multigrid steps" => levelcount,
     "α_s" => init_alpha, "β_s" => init_beta, "Effective electron mass" => norm_mass, "Normal resistivity" => norm_resist,
-    "α_n" => alphaN, "β_n" => betaN,
-    "Grain size (ξ)" => grain_diameter,"Multiple of grains" => rep_grain,"Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
-    "Lattice angle" => grainangle,  "J ramp" => Jramp, "E criterion" => Ecrit, "Grain Boundary Thickness (ξ)" => grain_thick,
+    "α_n" => alphaN, "β_n" => betaN,"Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
+    "J ramp" => Jramp, "E criterion" => Ecrit,
     "Date" => string(now()), "Backend" => bknd, "Random seed" => rng_seed,"Finder" => string(finder),"MulTDGL Version no." => string(pkgversion(MulTDGL)),
     "TDGL_Polycrystal Version no." => Version)
+
+    append_metadata!(metadata,pattern)
 
     return f_jc,metadata,start_α,start_β,start_m⁻¹,start_σ
 end

@@ -156,9 +156,14 @@ function parse_CL()
             default = 0
 
         "--thickness"
-            help = "Thickness of polycrystal grain boundaries"
+            help = "Thickness of polycrystal grain boundaries in coherence lengths"
             arg_type = Float64
             default = 3.0
+
+        "--grain_size"
+            help = "Average grain size in coherence lengths"
+            arg_type = Float64
+            default = 32.0
 
         "--xmin"
             help = "Width in coherence lengths of system in the x direction"
@@ -217,6 +222,11 @@ function parse_CL()
 
         "--rng_seed"
             help = "Seed for the random number generator, used to generate the initial state of the system"
+            arg_type = Int64
+            default = 1
+
+        "--voronoi_seed"
+            help = "Seed for the Voronoi grain distribution, used to generate the Voronoi tessellation"
             arg_type = Int64
             default = 1
     end

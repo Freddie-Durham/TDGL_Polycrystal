@@ -2,9 +2,9 @@ using TDGL_Polycrystal
 using HDF5
 
 function run_simulation(;uID,startB,stopB,stepB,
-    pixels_per_xi,AA_factor,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
-    Ecrit,Jramp,holdtime,init_hold,N_value,rep_grain,thickness,
-    xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,kwargs...)
+    pixels_per_xi,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
+    Ecrit,Jramp,holdtime,init_hold,grain_size,thickness,
+    xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,voronoi_seed,kwargs...)
     init_time = time()
 
     stopB = startB + stopB
@@ -20,7 +20,7 @@ function run_simulation(;uID,startB,stopB,stepB,
     B_range = (startB/100):(stepB/100):(stopB/100)
 
     FindType = JC2DFinder
-    pattern = TDGL_Polycrystal.TruncOct(N_value,xmin,rep_grain,thickness,AA_factor)
+    pattern = TDGL_Polycrystal.Voronoi(grain_size,thickness,voronoi_seed)
 
     finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(
     pixels_per_xi,pattern,tstep,GL,conductivity,norm_resist,norm_mass,Ecrit,Jramp,
