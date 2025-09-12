@@ -359,7 +359,6 @@ function draw!(mesh,orig,dest,GB_thick,val)
     end
 end
 
-
 "takes in grain size and grain boundary thickness in pixels"
 function draw_lattice(dims,filename,id,grain_size,GB_thick,init_val=0.0,set_val=1.0)
     grain_size /= dims[1]
