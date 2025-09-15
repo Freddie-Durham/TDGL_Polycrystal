@@ -161,7 +161,7 @@ function simulation_setup(vortex_radius,pattern,tstep,GL,init_σ,norm_resist,nor
     "J ramp" => Jramp, "E criterion" => Ecrit,
     "Date" => string(now()), "Backend" => bknd, "Random seed" => rng_seed,"Finder" => string(finder),"MulTDGL Version no." => string(pkgversion(MulTDGL)),
     "TDGL_Polycrystal Version no." => Version)
-
+    
     append_metadata!(metadata,pattern)
 
     return f_jc,metadata,start_α,start_β,start_m⁻¹,start_σ

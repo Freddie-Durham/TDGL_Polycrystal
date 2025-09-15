@@ -11,6 +11,7 @@ function append_metadata!(metadata::Dict,pattern::Voronoi)
     metadata["Pattern"] = "Voronoi Tessellation"
     metadata["Grain size (ξ)"] = pattern.grain_size
     metadata["Grain Boundary Thickness (ξ)"] = pattern.grain_thick
+    metadata["Voronoi Seed"] = pattern.seed
 end
 
 #grain size and GB thickness in coherence lengths
@@ -39,6 +40,11 @@ end
 
 struct JosephsonJunction 
     junc_thick::Float64
+end
+
+function append_metadata!(metadata::Dict,pattern::JosephsonJunction)
+    metadata["Pattern"] = "Josephson Junction"
+    metadata["Junction Thickness (ξ)"] = pattern.junc_thick
 end
 
 "Returns size and angle of grain to enable periodic BCs"
