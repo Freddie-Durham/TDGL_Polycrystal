@@ -22,12 +22,13 @@ function run_simulation(;uID,startB,max_steps,
         name = "$(uID)B-"*to_string(startB)
         TDGL_Polycrystal.make_path(path)
 
+        metadata["J_disp_factor"] = finder.Jdisp0
         save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_σ)
 
         println("Setup Complete.")
 
         sim_data, timetaken = find_jc(finder)
-        header = ["Current","Super Current","Magnetic Field","Electric Field"]
+        header = ["Current","Super Current","Displacement Current","Magnetic Field","Electric Field"]
         save_simdata(path,name,sim_data,header,timetaken)
         println("Simulation complete, time taken = $(timetaken)")  
     end

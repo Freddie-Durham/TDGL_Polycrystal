@@ -87,8 +87,10 @@ end
 
 "Setup material using Crystal2D according to Carty(2008) - 2D slice of truncated octahedra"
 function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,pattern,norm_resist,norm_mass,alphaN,betaN,m,backend)
+    #relative weights of nodes based on whether inside or outside grain boundaries
+    weights = apply_pattern(pattern,pixels,elemextent(m, ()))
     #apply pattern to normalised α value
-    start_α = apply_pattern(pattern,init_α,alphaN,pixels,elemextent(m, ()))
+    start_α = map(w->linear_interp(init_α,alphaN,w), weights)
 
     #apply coating if non-periodic in y direction
     if m.periodic[1] && !m.periodic[2] && typeof(pattern) == TDGL_Polycrystal.TruncOct
@@ -97,22 +99,21 @@ function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,pattern,norm_re
         start_α[:,end-thickness:end] .= alphaN
     end
     α = RectPrimalForm0Data(m, adapt(backend, reshape(start_α, :)))
-    
-    #need two lots of conductivity for x and y 
-    start_σ = apply_pattern(pattern,init_σ,1/norm_resist,pixels,elemextent(m, (1,)))
-    start_2σ = apply_pattern(pattern,init_σ,1/norm_resist,pixels,elemextent(m, (2,)))
-    σ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_σ, :),reshape(start_2σ, :)))) 
 
-    #same goes for reciprocal mass
-    start_m⁻¹ = apply_pattern(pattern,init_m⁻¹,1/norm_mass,pixels,elemextent(m, (1,)))
-    start_2m⁻¹ = apply_pattern(pattern,init_m⁻¹,1/norm_mass,pixels,elemextent(m, (2,)))
-    m⁻¹ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_m⁻¹, :),reshape(start_2m⁻¹, :)))) 
-
-    #can also change β but often not necessary
-    start_β = apply_pattern(pattern,init_β,betaN,pixels,elemextent(m, ()))
+    start_β = map(w->linear_interp(init_β,betaN,w), weights)
     β = RectPrimalForm0Data(m, adapt(backend, reshape(start_β, :)))
     
-    return MulTDGL.Material(α, β, m⁻¹, σ),start_α,start_β,start_m⁻¹,start_σ
+    #need two lots of conductivity for x and y 
+    start_σX = map(w->linear_interp(init_σ,1/norm_resist,w),interp_edgesX(weights,m.periodic[1]))
+    start_σY = map(w->linear_interp(init_σ,1/norm_resist,w),interp_edgesY(weights,m.periodic[2]))
+    σ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_σX, :),reshape(start_σY, :)))) 
+
+    #same goes for reciprocal mass
+    start_m⁻¹X = map(w->linear_interp(init_m⁻¹,1/norm_mass,w),interp_edgesX(weights,m.periodic[1]))
+    start_m⁻¹Y = map(w->linear_interp(init_m⁻¹,1/norm_mass,w),interp_edgesY(weights,m.periodic[2]))
+    m⁻¹ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_m⁻¹X, :),reshape(start_m⁻¹Y, :)))) 
+
+    return MulTDGL.Material(α, β, m⁻¹, σ),start_α,start_β,start_m⁻¹X,start_σY
 end
 
 "Convert string to type of backend"
@@ -142,7 +143,7 @@ function simulation_setup(vortex_radius,pattern,tstep,GL,init_σ,norm_resist,nor
     n2 = elemcount(mesh, Val(2)) # number of faces
 
     init_m⁻¹ = 1.0
-    material,start_α,start_β,start_m⁻¹,start_σ = get_material(
+    material,start_α,start_β,start_m⁻¹X,start_σY = get_material(
         init_alpha,init_beta,init_m⁻¹,init_σ,vortex_radius,pattern,norm_resist,norm_mass,alphaN,betaN,mesh,backend)
     
     system = jc2d_system(n1,n2,mesh,params,material,backend,B_init)
@@ -164,7 +165,7 @@ function simulation_setup(vortex_radius,pattern,tstep,GL,init_σ,norm_resist,nor
     
     append_metadata!(metadata,pattern)
 
-    return f_jc,metadata,start_α,start_β,start_m⁻¹,start_σ
+    return f_jc,metadata,start_α,start_β,start_m⁻¹X,start_σY
 end
 
 "set the B field of the system in the solver and reset the solver state"

@@ -209,7 +209,7 @@ function get_dest(orig,length,angle)
 end
 
 "Draws a line in 2D in pixels"
-function drawline!(grid,orig,dest,thickness=1,value=0)
+function drawline!(grid,orig,dest,thickness=1)
     dx = dest[1] - orig[1]
     dy = dest[2] - orig[2]
 
@@ -233,51 +233,51 @@ function drawline!(grid,orig,dest,thickness=1,value=0)
     for i in imin:idir:imax
         for j in jmin:jdir:jmax
             if isclose(i - neworig[1],j - neworig[2],dx,dy,thickness) && issafe(i,size(grid)[1]) && issafe(j,size(grid)[2])
-                grid[i,j] = value
+                grid[i,j] = 1.0
             end
         end
     end
 end
 
 "Draw a square using drawline!"
-function square!(grid,origin,len,thickness,angle,value=0)
+function square!(grid,origin,len,thickness,angle)
     dest = get_dest(origin,len,angle)
-    drawline!(grid,origin,dest,thickness,value)
+    drawline!(grid,origin,dest,thickness)
 
     for a in [π/2,-π,3*π/2]
         origin = dest
         dest = get_dest(origin,len,a+angle)
-        drawline!(grid,origin,dest,thickness,value)
+        drawline!(grid,origin,dest,thickness)
     end
 end
 
 "Draw an octagon using drawline!"
-function octagon!(grid,origin,len,thickness,angle,value=0)
+function octagon!(grid,origin,len,thickness,angle)
     dest = get_dest(origin,len/4,angle) #Starts from bottom right corner
 
     for a in [0,π/2,-π,3*π/2]
         origin = dest
         dest = get_dest(origin,len/2,angle+a)
-        drawline!(grid,origin,dest,thickness,value)
+        drawline!(grid,origin,dest,thickness)
         origin = dest
         dest = get_dest(origin,sqrt(2)*len/4,π/4+angle+a)
-        drawline!(grid,origin,dest,thickness,value)
+        drawline!(grid,origin,dest,thickness)
     end
 end
 
 "Draw a series of identical shapes that tesselate space"
-function tesselate!(shape,grid,len,thickness,angle,xlen,ylen,value=0)
+function tesselate!(shape,grid,len,thickness,angle,xlen,ylen)
     safety_factor = 2 #min = sqrt(2)
     max_len = max(xlen,ylen)
     long_side = safety_factor*max_len
-    next_i = [Int(max_len/2 - round(max_len*(1+safety_factor/sqrt(8))*cos(π/4+angle))),Int(max_len/2 - round(max_len*(1+safety_factor/sqrt(8))*sin(π/4+angle)))]
+    next_i = [round(Int64,max_len/2 - max_len*(1+safety_factor/sqrt(8))*cos(π/4+angle)),round(Int64,max_len/2 - max_len*(1+safety_factor/sqrt(8))*sin(π/4+angle))]
 
     for i in 1:Int(ceil(long_side/len))
-        shape(grid,next_i,len,thickness,angle,value)
+        shape(grid,next_i,len,thickness,angle)
         next_j = get_dest(next_i,len,π/2 + angle)
 
         for j in 1:Int(ceil(long_side/len))
-            shape(grid,next_j,len,thickness,angle,value)
+            shape(grid,next_j,len,thickness,angle)
             next_j = get_dest(next_j,len,π/2 + angle)
         end
         next_i = get_dest(next_i,len,angle)
@@ -296,25 +296,25 @@ function non_periodic!(mesh,dims,ymin,ymax,startval=0,endval=1)
 end
 
 "Apply tesselating pattern to a grid at high resolution then return anti-aliased scaled down version"
-function apply_pattern(TrOct::TruncOct,init_val,new_val,pixels,veclen)
-    init_grid = init_val*ones(Float64,veclen.*TrOct.factor)
-    tesselate!(TrOct.shape,init_grid,TrOct.grain_size*pixels*TrOct.factor,TrOct.grain_thick*pixels*TrOct.factor,TrOct.angle,veclen[1]*TrOct.factor,veclen[2]*TrOct.factor,new_val)
+function apply_pattern(TrOct::TruncOct,pixels,veclen)
+    init_grid = zeros(Float64,veclen.*TrOct.factor)
+    tesselate!(TrOct.shape,init_grid,TrOct.grain_size*pixels*TrOct.factor,TrOct.grain_thick*pixels*TrOct.factor,TrOct.angle,veclen[1]*TrOct.factor,veclen[2]*TrOct.factor)
     return lower_resolution(init_grid,TrOct.factor)
 end
 
-function apply_pattern(voronoi::Voronoi,init_val,new_val,pixels,veclen)
+function apply_pattern(voronoi::Voronoi,pixels,veclen)
     package_dir = abspath(joinpath(@__DIR__,".."))
-    return draw_lattice(veclen,package_dir*"neper/2D_crystal",voronoi.seed,voronoi.grain_size*pixels,voronoi.grain_thick*pixels,init_val,new_val)
+    return draw_lattice(veclen,package_dir*"neper/2D_crystal",voronoi.seed,voronoi.grain_size*pixels,voronoi.grain_thick*pixels)
 end
 
 "Apply josephson junction pattern to a grid"
-function apply_pattern(JJ::JosephsonJunction,init_val,new_val,pixels,veclen)
-    init_grid = init_val*ones(Float64,veclen)
+function apply_pattern(JJ::JosephsonJunction,pixels,veclen)
+    init_grid = zeros(Float64,veclen)
 
-    half_x = fld(veclen[1],2)
-    junc_thick_xi = fld(JJ.junc_thick*pixels,2)
-    init_grid[half_x-junc_thick_xi:half_x+junc_thick_xi,end - fld(veclen[2],3):end] .= new_val
-    init_grid[half_x-junc_thick_xi:half_x+junc_thick_xi,1:fld(veclen[2],3)] .= new_val
+    half_x = floor(Int64,veclen[1]/2)
+    junc_thick_xi = floor(Int64,JJ.junc_thick*pixels/2)
+    init_grid[half_x-junc_thick_xi:half_x+junc_thick_xi,end - floor(Int64,veclen[2]/3):end] .= 1.0
+    init_grid[half_x-junc_thick_xi:half_x+junc_thick_xi,1:floor(Int64,veclen[2]/3)] .= 1.0
     return init_grid
 end
 
@@ -356,17 +356,54 @@ function Lattice2D(filename)
     Lattice2D(get_points(strs,Vertex()),get_points(strs,Edge()))
 end
 
-function draw!(mesh,orig,dest,GB_thick,val)
+function draw!(mesh,orig,dest,GB_thick)
     o = map(x->round(Int,x),orig)
     d = map(x->round(Int,x),dest)
 
     if o!=d
-        drawline!(mesh,o,d,GB_thick,val)
+        drawline!(mesh,o,d,GB_thick)
     end
 end
 
+"generate edges in the y direction, with extra set of edges for periodic boundary conditions"
+function interp_edgesY(mesh,periodic_y)
+    dims = size(mesh)
+    new_mesh = zeros((dims[1],dims[2]-1+periodic_y))
+    for x in 1:dims[1]
+        for y in 2:dims[2]
+            new_mesh[x,y-1] = (mesh[x,y-1]+mesh[x,y])/2
+        end
+        if periodic_y
+            new_mesh[x,end] = (mesh[x,end]+mesh[x,1])/2
+        end
+    end
+    return new_mesh
+end
+
+"generate edges in the x direction, with extra set of edges for periodic boundary conditions"
+function interp_edgesX(mesh,periodic_x)
+    dims = size(mesh)
+    new_mesh = zeros((dims[1]-1+periodic_x,dims[2]))
+    for y in 1:dims[2]
+        for x in 2:dims[1]
+            new_mesh[x-1,y] = (mesh[x-1,y]+mesh[x,y])/2
+        end
+        if periodic_x
+            new_mesh[end,y] = (mesh[end,y]+mesh[1,y])/2
+        end
+    end
+    return new_mesh
+end
+
+"return a vector of zeros with only the 'ind'th index populated"
+function selector(vec,ind::Integer)
+    new = zeros(length(vec))
+    new[ind] = vec[ind]
+    return new
+end
+
 "takes in grain size and grain boundary thickness in pixels"
-function draw_lattice(dims,filename,id,grain_size,GB_thick,init_val=0.0,set_val=1.0)
+function draw_lattice(dims,filename,id,grain_size,GB_thick)
     grain_size /= dims[1]
     filename *= "D$(round(Int,grain_size*1000))AR$(round(Int,100*dims[1]/dims[2]))xyID$id"
     if !isfile(filename*".tess")
@@ -382,28 +419,18 @@ function draw_lattice(dims,filename,id,grain_size,GB_thick,init_val=0.0,set_val=
         simple_line!(mesh, orig, dest, GB_thick)
 
         #apply periodicity condition
-        if any(dest .> dims) || any(orig .> dims) || any(dest .< 1) || any(orig .< 1)
-            orig1 = copy(orig)
-            dest1 = copy(dest)
-            if dest[1] > dims[1] || orig[1] > dims[1]
-                orig1[1] -= dims[1]
-                dest1[1] -= dims[1]
+        for i in eachindex(dims)
+            diff = selector(dims,i)
+            for compare in [dest,orig]
+                if compare[i] > dims[i]
+                    simple_line!(mesh, orig .- diff, dest .- diff, GB_thick)
+                end
+                if compare[i] < 1
+                    simple_line!(mesh, orig .+ diff, dest .+ diff, GB_thick)
+                end
             end
-            if dest[2] > dims[2] || orig[2] > dims[2]
-                orig1[2] -= dims[2]
-                dest1[2] -= dims[2]
-            end
-            if dest[1] < 1 || orig[1] < 1
-                orig1[1] += dims[1]
-                dest1[1] += dims[1]
-            end
-            if dest[2] < 1 || orig[2] < 1
-                orig1[2] += dims[2]
-                dest1[2] += dims[2]
-            end
-            simple_line!(mesh, orig1, dest1, GB_thick)
         end
     end
 
-    return map((x)->linear_interp(init_val,set_val,min(1.0,x)),mesh) 
+    return map((x)->min(1.0,x),mesh) 
 end

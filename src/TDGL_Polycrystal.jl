@@ -10,7 +10,7 @@ using ArgParse
 using CUDA
 using Random
 
-const Version = "0.1.4" 
+const Version = "0.1.5" 
 
 include("Defs.jl")
 include("Utilities.jl")

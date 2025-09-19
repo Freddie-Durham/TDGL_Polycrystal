@@ -3,8 +3,8 @@ function key_metadata(sim_grid,start_α,start_β,start_m⁻¹,start_σ,metadata)
     #save initial grid settings, can save on every timestep?
     sim_grid["α"] = start_α
     sim_grid["β"] = start_β
-    sim_grid["m⁻¹"] = start_m⁻¹
-    sim_grid["σ"] = start_σ
+    sim_grid["m⁻¹_x"] = start_m⁻¹
+    sim_grid["σ_y"] = start_σ
 
     #append metadata for whole campaign to grid
     for (key,val) in metadata 
