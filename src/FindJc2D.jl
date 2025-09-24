@@ -1,3 +1,5 @@
+const EXPONENTIAL = true
+
 "wrapper around the london multigrid solver for determining the critical current density in 2d systems"
 mutable struct JC2DFinder{R,VR,VC} <: Finder
     solver::ImplicitLondonMultigridSolver{2,R,RectPrimalForm0Data{2,R,VR},RectPrimalForm1Data{2,R,VR},RectPrimalForm0Data{2,Complex{R},VC},RectPrimalForm1Data{2,Complex{R},VC}}
@@ -27,6 +29,11 @@ function JC2DFinder(solver, ecrit::R, initholdtime, jholdtime, jinit::R, jrelste
     data(δda_rhs) .= zero(eltype(data(δda_rhs)))
     lifetimeE = Vector{R}([])
 
+    if EXPONENTIAL
+        jrelstep = 1.01
+        jinit = jrelstep
+    end
+
     JC2DFinder(solver,
                mode,
                ecrit,
@@ -43,6 +50,13 @@ function JC2DFinder(solver, ecrit::R, initholdtime, jholdtime, jinit::R, jrelste
                lifetimeE)
 end
 
+function increment_J!(finder::JC2DFinder)
+    if EXPONENTIAL
+        finder.j *= finder.jrelstep
+    else
+        finder.j += finder.jrelstep
+    end
+end
 
 "Run simulation for a given B field. Ramp from J_init until E crit is exceeded"
 function step!(finder::JC2DFinder)
@@ -73,7 +87,7 @@ function step!(finder::JC2DFinder)
         if finder.jrelstep > zero(typeof(finder.jrelstep))
             if finder.E_field < finder.ecrit
                 finder.curholdsteps = 0
-                finder.j += finder.jrelstep    #linear increase in J ramping
+                increment_J!(finder)
                 finder.esum = zero(typeof(finder.esum))
             elseif finder.curholdsteps > finder.jholdtime / parameters.k - 0.5
                 finder.curholdsteps = 0
@@ -87,7 +101,7 @@ function step!(finder::JC2DFinder)
                     finder.mode = JC2DDone()
                 else
                     finder.curholdsteps = 0
-                    finder.j += finder.jrelstep   #linear decrease in J ramping
+                    increment_J!(finder)   #linear decrease in J ramping
                     finder.esum = zero(typeof(finder.esum))
                 end
             end
