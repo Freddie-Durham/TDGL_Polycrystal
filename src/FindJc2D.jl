@@ -1,4 +1,5 @@
 const EXPONENTIAL = true
+const SUBSECTION = false
 
 "wrapper around the london multigrid solver for determining the critical current density in 2d systems"
 mutable struct JC2DFinder{R,VR,VC} <: Finder
@@ -15,6 +16,7 @@ mutable struct JC2DFinder{R,VR,VC} <: Finder
     esum::R
     δda_rhs::RectPrimalForm1Data{2,R,VR}
     B_field::R
+    prev_state::State
     lifetimeE::Vector{R}
 end
 
@@ -30,8 +32,8 @@ function JC2DFinder(solver, ecrit::R, initholdtime, jholdtime, jinit::R, jrelste
     lifetimeE = Vector{R}([])
 
     if EXPONENTIAL
-        jrelstep = 1.01
         jinit = jrelstep
+        jrelstep = 1.01
     end
 
     JC2DFinder(solver,
@@ -47,7 +49,30 @@ function JC2DFinder(solver, ecrit::R, initholdtime, jholdtime, jinit::R, jrelste
                esum,
                δda_rhs,
                b_field,
+               solver.state_u[1],
                lifetimeE)
+end
+
+"find the average value of a horizontal fraction of an array (centered around the midpoint) then divide by the ratio of the fraction to the total area"
+function subarray_avg(sarr,extent,frac) 
+    y_slice = frac == 0 ? 0 : extent ÷ frac
+    avg = sum(asarray(sarr,1)[:,1+y_slice:end-y_slice])
+    return avg / (1-2/frac)
+end
+
+"calculate the electric field on each edge in the system, then return the average value in the x direction"
+function E_field_avg(s::ImplicitLondonMultigridSolver,a_prev,frac=0)
+    m = mesh(s)
+    δt = parameters(s).k
+    δh = m.h[1]
+
+    set_form!((e,_,a,a_prev) -> a[e]-a_prev[e], s.scratch_1, MulTDGL.state(s).a, a_prev) 
+    dAdt_avg = subarray_avg(s.scratch_1,m.extent[2],frac) /δt
+
+    set_form!((e,_,ϕ) -> dₑ(m,ϕ,e), s.scratch_1, s.state_u[1].φ)
+    ∇ϕ_avg = subarray_avg(s.scratch_1,m.extent[2],frac) /δh
+
+    return (-dAdt_avg -∇ϕ_avg) * δh / measure(m)
 end
 
 function increment_J!(finder::JC2DFinder)
@@ -55,6 +80,15 @@ function increment_J!(finder::JC2DFinder)
         finder.j *= finder.jrelstep
     else
         finder.j += finder.jrelstep
+    end
+end
+
+function calculate_E!(finder::JC2DFinder,step_data)
+    if SUBSECTION
+        finder.E_field = E_field_avg(finder.solver,finder.prev_state.a,8)
+        finder.prev_state = copy(state(finder))
+    else
+        finder.E_field = step_data.e[1]
     end
 end
 
@@ -70,8 +104,7 @@ function step!(finder::JC2DFinder)
 
     #call london multigrid
     step_data = MulTDGL.step!(finder.solver, finder.δda_rhs, (finder.j,0.0)) 
-    
-    finder.E_field = step_data.e[1]
+    calculate_E!(finder,step_data)
 
     finder.timesteps += 1
     finder.curholdsteps += 1
@@ -108,7 +141,6 @@ function step!(finder::JC2DFinder)
         end
     end
 end
-
 
 "Run stepping code and record electric field, current and time taken"
 function find_jc(f_jc::JC2DFinder,verbose::Bool=true)

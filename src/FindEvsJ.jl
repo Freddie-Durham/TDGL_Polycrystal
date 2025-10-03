@@ -4,6 +4,9 @@ Jdisp_ratio(ρ,λ) = (ρ^2 * ε0) / (λ^2 * μ0)
 const ρ_Nb = 1.5e-7
 const λ_Nb = 4.7e-8
 
+const ρ_ReBCO = 2e-6
+const λ_ReBCO = 1.5e-7
+
 "Run simulation at a fixed J (≈Jc) and B field to study fluctuations in E field"
 mutable struct EvsJ{R,VR,VC} <: Finder
     solver::ImplicitLondonMultigridSolver{2,R,RectPrimalForm0Data{2,R,VR},RectPrimalForm1Data{2,R,VR},RectPrimalForm0Data{2,Complex{R},VC},RectPrimalForm1Data{2,Complex{R},VC}}
@@ -45,7 +48,7 @@ function EvsJ(solver, ecrit::R, shortholdtime, longholdtime, jinit::R, jrelstep:
         startB,
         zero(R),
         zero(R),
-        Jdisp_ratio(ρ_Nb,λ_Nb),
+        Jdisp_ratio(ρ_ReBCO,λ_ReBCO),
         δda_rhs,
         )
 end
