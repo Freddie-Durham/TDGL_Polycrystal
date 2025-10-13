@@ -12,9 +12,11 @@ function run_simulation(;uID,startB,stopB,stepB,
     #avoid difficulty with filenames that have decimal points
     if stepB >= 1 
         campaign = "$(convert(Int64,startB))_$(convert(Int64,stopB))%B_step$(convert(Int64,stepB))"
-    else
+    elseif stepB != 0
         inv_step = convert(Int64,round(1/stepB))
         campaign = "$(convert(Int64,round(startB)))_$(convert(Int64,round(stopB)))%B_step1_$(inv_step)"
+    else
+        campaign = "$(convert(Int64,round(startB)))_$(convert(Int64,round(stopB)))%B"
     end
 
     B_range = (startB/100):(stepB/100):(stopB/100)
