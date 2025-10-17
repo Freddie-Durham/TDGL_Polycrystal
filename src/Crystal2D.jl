@@ -318,6 +318,7 @@ function apply_pattern(JJ::JosephsonJunction,pixels,veclen)
     return init_grid
 end
 
+#=
 struct Vertex{K <: AbstractFloat} 
     p::Vector{K}
 end
@@ -330,11 +331,6 @@ Edge(;dim=2) = Edge(zeros(Int64,dim))
 
 identifier(::Vertex) = "**vertex"
 identifier(::Edge) = "**edge"
-
-struct Lattice2D
-    vertices::Dict{Int,Vertex}
-    edges::Dict{Int,Edge}
-end
 
 function get_points(arr,type::Union{Vertex{K},Edge{K}}) where K
     ind = findfirst(s->contains(s,identifier(type)),arr)
@@ -350,20 +346,7 @@ function get_points(arr,type::Union{Vertex{K},Edge{K}}) where K
     end
     return dict
 end
-
-function Lattice2D(filename)
-    strs = readlines(filename*".tess")
-    Lattice2D(get_points(strs,Vertex()),get_points(strs,Edge()))
-end
-
-function draw!(mesh,orig,dest,GB_thick)
-    o = map(x->round(Int,x),orig)
-    d = map(x->round(Int,x),dest)
-
-    if o!=d
-        drawline!(mesh,o,d,GB_thick)
-    end
-end
+=#
 
 "generate edges in the y direction, with extra set of edges for periodic boundary conditions"
 function interp_edgesY(mesh,periodic_y)

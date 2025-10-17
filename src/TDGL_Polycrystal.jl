@@ -2,6 +2,7 @@ module TDGL_Polycrystal
 
 using MulTDGL
 using LinearAlgebra
+using StaticArrays
 using KernelAbstractions
 using Dates
 using HDF5
@@ -10,12 +11,12 @@ using ArgParse
 using CUDA
 using Random
 
-const Version = "0.1.6" 
+const Version = "0.1.7" 
 
 include("Defs.jl")
 include("Utilities.jl")
+include("Voronoi.jl")
 include("Crystal2D.jl")
-include("Crystal3D.jl")
 include("FindJc2D.jl")
 include("FindBFix.jl")
 include("FindLinX.jl")

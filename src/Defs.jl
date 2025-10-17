@@ -1,3 +1,5 @@
+const Vec3 = SVector{3,Float64}
+
 abstract type Finder end
 
 struct JC2DInitHold end
