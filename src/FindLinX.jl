@@ -26,7 +26,7 @@ end
 
 "constructor for BVarLinXFinder. Does not initialise BCs"
 function BVarLinXFinder(solver, ecrit::R, shortholdtime, longholdtime, jinit::R, jrelstep::R, startB::R, stopB::R, stepB::R, num_samples) where {R}
-    mode = JC2DInitHold()
+    mode = JcInitHold()
     timesteps = 0
     curholdsteps = 0
     num_holds = 0
@@ -120,7 +120,7 @@ function reached_equilibrium!(finder::BVarLinXFinder,tol=0.05)
             if finder.B_index <= finder.num_Bs
                 finder.allE[finder.B_index,1] = finder.B_field
             else
-                finder.mode = JC2DDone()
+                finder.mode = JcDone()
             end
 
         #When we collect 2 data points, every subsequent data point is found by extrapolation to Ecrit
@@ -184,12 +184,12 @@ function step!(finder::BVarLinXFinder)
     #If in initial hold state, do nothing unless we have exceeded our stated hold time.
     #Then move to a state of being above or below Jc (this is a rough estimate based on requested Ecrit)
     #We re-enter this state every time we increase the B field
-    if finder.mode == JC2DInitHold()
+    if finder.mode == JcInitHold()
         if finder.curholdsteps >= finder.shortholdtime / parameters.k
             finder.curholdsteps = 0
-            finder.mode = JC2DJHold()
+            finder.mode = JcJHold()
         end
-    elseif finder.mode == JC2DJHold()
+    elseif finder.mode == JcJHold()
         if finder.E_field < finder.ecrit
             finder.j += finder.jrelstep
             finder.curholdsteps = 0
@@ -216,7 +216,7 @@ function find_jc(f_jc::BVarLinXFinder,verbose::Bool=true)
     e_field = Vector{Float64}([])
 
     starttime = time()
-    while f_jc.mode != JC2DDone()
+    while f_jc.mode != JcDone()
         push!(b_field,f_jc.B_field)
         push!(current,f_jc.j)
         push!(e_field,f_jc.E_field)

@@ -1,10 +1,10 @@
 const EXPONENTIAL = true
 const SUBSECTION = false
 
-"wrapper around the london multigrid solver for determining the critical current density in 2d systems"
-mutable struct JC2DFinder{R,VR,VC} <: Finder
-    solver::ImplicitLondonMultigridSolver{2,R,RectPrimalForm0Data{2,R,VR},RectPrimalForm1Data{2,R,VR},RectPrimalForm0Data{2,Complex{R},VC},RectPrimalForm1Data{2,Complex{R},VC}}
-    mode::JC2DMode
+"wrapper around the london multigrid solver for determining the critical current density"
+mutable struct JcFinder{N,R,VR,VC} <: Finder
+    solver::ImplicitLondonMultigridSolver{N,R,RectPrimalForm0Data{N,R,VR},RectPrimalForm1Data{N,R,VR},RectPrimalForm0Data{N,Complex{R},VC},RectPrimalForm1Data{N,Complex{R},VC}}
+    mode::JcMode
     ecrit::R
     initholdtime::Int64
     jholdtime::Int64
@@ -14,29 +14,22 @@ mutable struct JC2DFinder{R,VR,VC} <: Finder
     jrelstep::R
     E_field::R
     esum::R
-    δda_rhs::RectPrimalForm1Data{2,R,VR}
+    δda_rhs::RectPrimalForm1Data{N,R,VR}
     B_field::R
     prev_state::State
-    lifetimeE::Vector{R}
 end
 
-"constructor for JC2DFinder. Does not initialise BCs"
-function JC2DFinder(solver, ecrit::R, initholdtime, jholdtime, jinit::R, jrelstep::R, b_field::R) where {R}
-    mode = JC2DInitHold()
+"constructor for JcFinder. Does not initialise BCs"
+function JcFinder(solver, ecrit::R, initholdtime, jholdtime, jinit::R, jrelstep::R, b_field::R) where {R}
+    mode = JcInitHold()
     timesteps = 0
     curholdsteps = 0
     e_field = zero(R)
     esum = zero(R)
     δda_rhs = MulTDGL.similar(MulTDGL.state(solver).a)
     data(δda_rhs) .= zero(eltype(data(δda_rhs)))
-    lifetimeE = Vector{R}([])
 
-    if EXPONENTIAL
-        jinit = jrelstep
-        jrelstep = 1.01
-    end
-
-    JC2DFinder(solver,
+    JcFinder(solver,
                mode,
                ecrit,
                initholdtime,
@@ -49,8 +42,7 @@ function JC2DFinder(solver, ecrit::R, initholdtime, jholdtime, jinit::R, jrelste
                esum,
                δda_rhs,
                b_field,
-               solver.state_u[1],
-               lifetimeE)
+               solver.state_u[1])
 end
 
 "find the average value of a horizontal fraction of an array (centered around the midpoint) then divide by the ratio of the fraction to the total area"
@@ -75,7 +67,7 @@ function E_field_avg(s::ImplicitLondonMultigridSolver,a_prev,frac=0)
     return (-dAdt_avg -∇ϕ_avg) * δh / measure(m)
 end
 
-function increment_J!(finder::JC2DFinder)
+function increment_J!(finder::JcFinder)
     if EXPONENTIAL
         finder.j *= finder.jrelstep
     else
@@ -83,7 +75,7 @@ function increment_J!(finder::JC2DFinder)
     end
 end
 
-function calculate_E!(finder::JC2DFinder,step_data)
+function calculate_E!(finder::JcFinder,step_data)
     if SUBSECTION
         finder.E_field = E_field_avg(finder.solver,finder.prev_state.a,8)
         finder.prev_state = copy(state(finder))
@@ -93,30 +85,29 @@ function calculate_E!(finder::JC2DFinder,step_data)
 end
 
 "Run simulation for a given B field. Ramp from J_init until E crit is exceeded"
-function step!(finder::JC2DFinder)
+function step!(finder::JcFinder{N}) where {N}
     sys = system(finder)
     parameters = sys.p
 
-    #record path of E field over time
-    push!(finder.lifetimeE,finder.E_field)
-
-    jc2d_bcs!(finder,sys)
+    jc_bcs!(finder,sys)
+    applied_current = NTuple{N,eltype(finder.j)}(zeros(eltype(finder.j),N))
+    applied_current[1] = finder.j
 
     #call london multigrid
-    step_data = MulTDGL.step!(finder.solver, finder.δda_rhs, (finder.j,0.0)) 
+    step_data = MulTDGL.step!(finder.solver, finder.δda_rhs, applied_current) 
+    
     calculate_E!(finder,step_data)
-
     finder.timesteps += 1
     finder.curholdsteps += 1
     finder.esum += finder.E_field
 
-    if finder.mode == JC2DInitHold()
+    if finder.mode == JcInitHold()
         if finder.curholdsteps > finder.initholdtime / parameters.k - 0.5
             finder.curholdsteps = 0
-            finder.mode = JC2DJHold()
+            finder.mode = JcJHold()
             finder.esum = zero(typeof(finder.esum))
         end
-    elseif finder.mode == JC2DJHold()
+    elseif finder.mode == JcJHold()
         if finder.jrelstep > zero(typeof(finder.jrelstep))
             if finder.E_field < finder.ecrit
                 finder.curholdsteps = 0
@@ -124,14 +115,14 @@ function step!(finder::JC2DFinder)
                 finder.esum = zero(typeof(finder.esum))
             elseif finder.curholdsteps > finder.jholdtime / parameters.k - 0.5
                 finder.curholdsteps = 0
-                finder.mode = JC2DDone()
+                finder.mode = JcDone()
             end
         else
             if finder.curholdsteps > finder.jholdtime / parameters.k - 0.5
                 eavg = finder.esum / finder.curholdsteps
                 if eavg < finder.ecrit
                     finder.curholdsteps = 0
-                    finder.mode = JC2DDone()
+                    finder.mode = JcDone()
                 else
                     finder.curholdsteps = 0
                     increment_J!(finder)   #linear decrease in J ramping
@@ -143,16 +134,18 @@ function step!(finder::JC2DFinder)
 end
 
 "Run stepping code and record electric field, current and time taken"
-function find_jc(f_jc::JC2DFinder,verbose::Bool=true)
+function find_jc(f_jc::JcFinder,verbose::Bool=true)
     current = Vector{Float64}([])
     b_field = Vector{Float64}([])
+    e_field = Vector{Float64}([])
     mode = Vector{String}([])
 
     starttime = time()
-    while f_jc.mode != JC2DDone()
+    while f_jc.mode != JcDone()
         push!(b_field,f_jc.B_field)
         push!(mode,string(f_jc.mode))
         push!(current,f_jc.j)
+        push!(e_field,f_jc.E_field)
         if verbose
             @time step!(f_jc)
             println("Time taken = $(time()-starttime)")
@@ -166,5 +159,5 @@ function find_jc(f_jc::JC2DFinder,verbose::Bool=true)
     end
     timetaken = time()-starttime
 
-    return [current,f_jc.lifetimeE,b_field,mode], timetaken
+    return [current,e_field,b_field,mode], timetaken
 end

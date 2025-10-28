@@ -28,7 +28,7 @@ mutable struct EvsJ{R,VR,VC} <: Finder
 end
 
 function EvsJ(solver, ecrit::R, shortholdtime, longholdtime, jinit::R, jrelstep::R, startB::R, max_steps::Int64) where {R}
-    mode = JC2DInitHold()
+    mode = JcInitHold()
     timesteps = 0
     curholdsteps = 0
     δda_rhs = MulTDGL.similar(MulTDGL.state(solver).a)
@@ -76,11 +76,11 @@ function step!(finder::EvsJ)
     finder.curholdsteps += 1
 
     if finder.j > finder.jrelstep * finder.max_steps
-        finder.mode = JC2DDone()
-    elseif finder.mode == JC2DInitHold() && finder.curholdsteps >= finder.longholdtime / parameters.k
+        finder.mode = JcDone()
+    elseif finder.mode == JcInitHold() && finder.curholdsteps >= finder.longholdtime / parameters.k
         finder.curholdsteps = 0
-        finder.mode = JC2DJHold()
-    elseif finder.mode == JC2DJHold() && finder.curholdsteps >= finder.shortholdtime / parameters.k
+        finder.mode = JcJHold()
+    elseif finder.mode == JcJHold() && finder.curholdsteps >= finder.shortholdtime / parameters.k
         finder.j += finder.jrelstep
         finder.curholdsteps = 0
     end
@@ -94,7 +94,7 @@ function find_jc(f_jc::EvsJ,verbose::Bool=true)
     e_field = Vector{Float64}([])
 
     starttime = time()
-    while f_jc.mode != JC2DDone()
+    while f_jc.mode != JcDone()
         J_disp = f_jc.dEdt * f_jc.Jdisp0
 
         push!(displace_current,J_disp)

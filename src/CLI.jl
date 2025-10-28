@@ -12,6 +12,17 @@ function key_metadata(sim_grid,start_α,start_β,start_m⁻¹,start_σ,metadata)
     end
 end
 
+"save initial grid settings (only weights) and metadata to HDF5 file"
+function key_metadata(sim_grid,weights,metadata)
+    #save initial grid settings, can save on every timestep?
+    sim_grid["Weights"] = weights
+
+    #append metadata for whole campaign to grid
+    for (key,val) in metadata 
+        HDF5.attributes(sim_grid)[key] = val
+    end
+end
+
 "create path to HDF5 file and save metadata and initial grid settings"
 function save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_σ)
     filepath = "$(path)$(name).h5"
@@ -175,8 +186,18 @@ function parse_CL()
             arg_type = Int64
             default = 64
 
+        "--zmin"
+            help = "Width in coherence lengths of system in the z direction"
+            arg_type = Int64
+            default = 64
+
         "--yperiodic"
             help = "Boolean value determining whether the system is periodic in the y direction (x direction, along which current is applied, is always periodic)"
+            arg_type = Bool
+            default = true
+
+        "--zperiodic"
+            help = "Boolean value determining whether the system is periodic in the z direction (x direction, along which current is applied, is always periodic)"
             arg_type = Bool
             default = true
 
@@ -229,6 +250,16 @@ function parse_CL()
             help = "Seed for the Voronoi grain distribution, used to generate the Voronoi tessellation"
             arg_type = Int64
             default = 1
+
+        "--dims"
+            help = "Number of dimensions for the simulation (2 or 3)"
+            arg_type = Int64
+            default = 2
+        
+        "--J_initial"
+            help = "Initial current density to start Jc finding from (defaults to 0.0001)"
+            arg_type = Float64
+            default = 0.0001
     end
     return parse_args(s,as_symbols=true)
 end

@@ -6,7 +6,7 @@ function run_simulation(;uID,startB,vary_param,num_vary,
     Ecrit,Jramp,holdtime,init_hold,N_value,rep_grain,thickness,
     xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,kwargs...)
 
-    FindType = JC2DFinder
+    FindType = JcFinder
     pattern = TDGL_Polycrystal.TruncOct(N_value,xmin,rep_grain,thickness,AA_factor)
 
     path = "outputs/$(uID)_"*vary_param*"_converge/"

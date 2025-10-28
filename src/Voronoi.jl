@@ -1,3 +1,17 @@
+#grain size and GB thickness in coherence lengths
+struct Voronoi 
+    grain_size::Float64
+    grain_thick::Float64
+    seed::Int64
+end
+
+function append_metadata!(metadata::Dict,pattern::Voronoi)
+    metadata["Pattern"] = "Voronoi Tessellation"
+    metadata["Grain size (ξ)"] = pattern.grain_size
+    metadata["Grain Boundary Thickness (ξ)"] = pattern.grain_thick
+    metadata["Voronoi Seed"] = pattern.seed
+end
+
 struct Vertex{N,K<:AbstractFloat} 
     p::SVector{N,K}
 end
@@ -67,10 +81,10 @@ function Lattice2D(filename)
 end
 
 struct TriangleData
-    a::Vec3
-    normal::Vec3
-    vec_ab::Vec3
-    vec_ac::Vec3
+    a::vec3
+    normal::vec3
+    vec_ab::vec3
+    vec_ac::vec3
     abab::Float64
     acac::Float64
     abac::Float64
@@ -120,14 +134,14 @@ function inside_triangle(p,T::TriangleData)::Bool
 end
 
 #All 8 corners of the cube
-OFFSETS::Vector{Vec3} = [Vec3([0.5,0.5,0.5]),Vec3([-0.5,-0.5,-0.5]),
-Vec3([-0.5,0.5,0.5]),Vec3([0.5,-0.5,0.5]),Vec3([0.5,0.5,-0.5]),
-Vec3([-0.5,0.5,-0.5]),Vec3([-0.5,-0.5,0.5]),Vec3([0.5,-0.5,-0.5])]
+OFFSETS::Vector{vec3} = [vec3([0.5,0.5,0.5]),vec3([-0.5,-0.5,-0.5]),
+vec3([-0.5,0.5,0.5]),vec3([0.5,-0.5,0.5]),vec3([0.5,0.5,-0.5]),
+vec3([-0.5,0.5,-0.5]),vec3([-0.5,-0.5,0.5]),vec3([0.5,-0.5,-0.5])]
 
 #NxNxN points distributed evenly throughout the cube 
-const N = 10
+const N = 5
 const VOLUME_FRAC = 1/(N^3)
-PRECISE::Vector{Vec3} = [Vec3(([i,j,k]/(N-1)).-0.5) for i in 0:N-1 for j in 0:N-1 for k in 0:N-1]
+PRECISE::Vector{vec3} = [vec3(([i,j,k]/(N-1)).-0.5) for i in 0:N-1 for j in 0:N-1 for k in 0:N-1]
 
 "Use a more expensive stencil to estimate volume of pixel inside triangle"
 function precise_area(point,tri_data::TriangleData)
@@ -166,7 +180,7 @@ function draw_slab!(mesh,a,b,c,thick = 1)
     tri_data = TriangleData(a,b,c,thick)
     
     @inbounds for I in boundingbox
-        mesh[I] += triangle_weight(Vec3(Tuple(I)),tri_data)
+        mesh[I] += triangle_weight(vec3(Tuple(I)),tri_data)
     end
 end
 
@@ -206,6 +220,8 @@ function draw_periodic_triangle!(mesh,a,b,c,thick)
     end
 end
 
+tri_area(a,b,c) = 0.5 * norm(cross(b - a, c - a))
+
 function create_3D_mesh(tess::Lattice3D,dims,thick,verbose=false)
     mesh = zeros(dims)
 
@@ -217,14 +233,53 @@ function create_3D_mesh(tess::Lattice3D,dims,thick,verbose=false)
             a,b,c = map(t->t.*dims,tri)
 
             draw_periodic_triangle!(mesh,a,b,c,thick)
-            actual_volume += triangle_area(a,b,c)*thick
+            actual_volume += tri_area(a,b,c)*thick
         end
     end
     calc_volume = sum(mesh)
-    mesh = map(m->min(m,1.0),mesh)
     δt = time() - start_t
 
-    println("Created mesh with GB volume = $(round(Int,actual_volume)) in $(round(δt,sigdigits=4))s")
+    println("Created mesh with fractional GB volume = $(round(Int,actual_volume/prod(dims))) in $(round(δt,sigdigits=4))s")
     println("Percent Volume Error = $(round(100*(actual_volume-calc_volume)/actual_volume,sigdigits=4))%")
-    return mesh
+    return map(m->min(m,1.0),mesh)
+end
+
+function interpolate_edges(mesh,periodic)
+    dims = size(mesh)
+    meshx = zeros((dims[1]-1+periodic[1],dims[2],dims[3]))
+    meshy = zeros((dims[1],dims[2]-1+periodic[2],dims[3]))
+    meshz = zeros((dims[1],dims[2],dims[3]-1+periodic[3]))
+
+    for I in CartesianIndices(meshx)
+        meshx[I] = 0.5 * (mesh[I] + mesh[mod1(I[1]+1,dims[1]),I[2],I[3]])
+    end
+
+    for I in CartesianIndices(meshy)
+        meshy[I] = 0.5 * (mesh[I] + mesh[I[1],mod1(I[2]+1,dims[2]),I[3]])
+    end
+
+    for I in CartesianIndices(meshz)
+        meshz[I] = 0.5 * (mesh[I] + mesh[I[1],I[2],mod1(I[3]+1,dims[3])])
+    end
+
+    return meshx, meshy, meshz
+end
+
+"Call neper to create a 3D voronoi tessellation if it does not already exist and return filename"
+function create_3D_tessellation(filepath,grain_size,seed)
+    filename = filepath * "D$(round(Int,grain_size*10000))ID$(seed)"
+    if !isfile(filename*".tess")
+        run(`neper -T -n from_morpho -morpho "graingrowth($grain_size)" -dim 3 -periodicity 1 -id $seed -o $filename`)
+    end
+    return filename
+end
+
+"generate a 3D voronoi tessellation pattern using neper and apply it to a mesh"
+function apply_3D_pattern(voronoi::Voronoi,pixels,dims)
+    filepath = abspath(joinpath(@__DIR__,".."))*"neper/3D_crystal/"
+    grain_size = voronoi.grain_size * pixels / dims[1]
+    lattice  = Lattice3D(create_3D_tessellation(filepath,grain_size,voronoi.seed))
+
+    println("Generating 3D Voronoi pattern with grain size $(voronoi.grain_size)ξ and thickness $(voronoi.grain_thick)ξ. Dims = $dims")
+    return create_3D_mesh(lattice, dims, voronoi.grain_thick*pixels, true)
 end

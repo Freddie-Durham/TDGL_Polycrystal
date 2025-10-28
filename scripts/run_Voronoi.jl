@@ -3,8 +3,8 @@ using HDF5
 
 function run_simulation(;uID,startB,stopB,stepB,
     pixels_per_xi,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
-    Ecrit,Jramp,holdtime,init_hold,grain_size,thickness,
-    xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,voronoi_seed,kwargs...)
+    Ecrit,Jramp,J_initial,holdtime,init_hold,grain_size,thickness,
+    xmin,ymin,zmin,yperiodic,zperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,voronoi_seed,dims,kwargs...)
     init_time = time()
 
     stopB = startB + stopB
@@ -19,14 +19,22 @@ function run_simulation(;uID,startB,stopB,stepB,
 
     B_range = (startB/100):(stepB/100):(stopB/100)
 
-    FindType = JC2DFinder
+    FindType = JcFinder
     pattern = TDGL_Polycrystal.Voronoi(grain_size,thickness,voronoi_seed)
 
-    finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(
-    pixels_per_xi,pattern,tstep,GL,conductivity,norm_resist,norm_mass,Ecrit,Jramp,
-    holdtime,init_hold,xmin,ymin,yperiodic,
-    alphaN,betaN,init_alpha,init_beta,FindType,levelcount,tol,backend,rng_seed,
-    B_range[1])
+    if dims < 3
+        finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(
+        pixels_per_xi,pattern,tstep,GL,conductivity,norm_resist,norm_mass,Ecrit,Jramp,
+        holdtime,init_hold,xmin,ymin,yperiodic,
+        alphaN,betaN,init_alpha,init_beta,FindType,levelcount,tol,backend,rng_seed,
+        J_initial,B_range[1])
+    else
+        finder, metadata, weights = simulation_setup_3D(
+        pixels_per_xi,pattern,tstep,GL,conductivity,norm_resist,norm_mass,Ecrit,Jramp,
+        holdtime,init_hold,xmin,ymin,zmin,yperiodic,zperiodic,
+        alphaN,betaN,init_alpha,init_beta,FindType,levelcount,tol,backend,rng_seed,
+        J_initial,B_range[1])
+    end
 
     path = "outputs/"
     name = "$(uID)/"
@@ -42,7 +50,14 @@ function run_simulation(;uID,startB,stopB,stepB,
     header = ["Current","Electric Field"]
     h5open(filepath,"w") do fid
         sim_grid = create_group(fid,"grid")
-        TDGL_Polycrystal.key_metadata(sim_grid,start_α,start_β,start_m⁻¹,start_σ,metadata)
+
+        #weights is either a single 3D mesh or a tuple of 2D meshes
+        if dims < 3
+            TDGL_Polycrystal.key_metadata(sim_grid,start_α,start_β,start_m⁻¹,start_σ,metadata)
+        else    
+            TDGL_Polycrystal.key_metadata(sim_grid,weights,metadata)
+        end
+
         println("Setup Complete")
 
         #create folder for current campaign

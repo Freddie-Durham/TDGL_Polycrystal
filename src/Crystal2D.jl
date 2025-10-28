@@ -1,20 +1,6 @@
 const corners = [[-0.5,0.5],[0.5,0.5],[0.5,-0.5],[-0.5,-0.5]]
 
 #grain size and GB thickness in coherence lengths
-struct Voronoi 
-    grain_size::Float64
-    grain_thick::Float64
-    seed::Int64
-end
-
-function append_metadata!(metadata::Dict,pattern::Voronoi)
-    metadata["Pattern"] = "Voronoi Tessellation"
-    metadata["Grain size (ξ)"] = pattern.grain_size
-    metadata["Grain Boundary Thickness (ξ)"] = pattern.grain_thick
-    metadata["Voronoi Seed"] = pattern.seed
-end
-
-#grain size and GB thickness in coherence lengths
 struct TruncOct 
     grain_size::Float64
     grain_thick::Float64
@@ -184,7 +170,6 @@ function simple_line!(mesh, orig, dest, thick)
     end
 end
 
-
 "Calculate how close a point is to a 2D rectangular slab"
 function isclose(x,y,dx,dy,thickness)
     if dy == 0
@@ -303,8 +288,8 @@ function apply_pattern(TrOct::TruncOct,pixels,veclen)
 end
 
 function apply_pattern(voronoi::Voronoi,pixels,veclen)
-    package_dir = abspath(joinpath(@__DIR__,".."))
-    return draw_lattice(veclen,package_dir*"neper/2D_crystal",voronoi.seed,voronoi.grain_size*pixels,voronoi.grain_thick*pixels)
+    package_dir = abspath(joinpath(@__DIR__,".."))*"neper/2D_crystal/"
+    return draw_lattice(veclen,package_dir,voronoi.seed,voronoi.grain_size*pixels,voronoi.grain_thick*pixels)
 end
 
 "Apply josephson junction pattern to a grid"
@@ -317,36 +302,6 @@ function apply_pattern(JJ::JosephsonJunction,pixels,veclen)
     init_grid[half_x-junc_thick_xi:half_x+junc_thick_xi,1:floor(Int64,veclen[2]/3)] .= 1.0
     return init_grid
 end
-
-#=
-struct Vertex{K <: AbstractFloat} 
-    p::Vector{K}
-end
-Vertex(;dim=2) = Vertex(zeros(Float64,dim))
-
-struct Edge{K <: Integer}
-    p::Vector{K}
-end
-Edge(;dim=2) = Edge(zeros(Int64,dim))
-
-identifier(::Vertex) = "**vertex"
-identifier(::Edge) = "**edge"
-
-function get_points(arr,type::Union{Vertex{K},Edge{K}}) where K
-    ind = findfirst(s->contains(s,identifier(type)),arr)
-    num_points = parse(Int64,arr[ind+1])
-
-    T = typeof(type)
-    dict = Dict{Int,T}()
-
-    for i in ind+2:ind+1+num_points
-        data = split(arr[i])
-        p = T([parse(K,data[2]),parse(K,data[3])])
-        dict[parse(Int,data[1])] = p
-    end
-    return dict
-end
-=#
 
 "generate edges in the y direction, with extra set of edges for periodic boundary conditions"
 function interp_edgesY(mesh,periodic_y)

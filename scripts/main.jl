@@ -1,7 +1,7 @@
 using TDGL_Polycrystal
 
 function main()
-    package_dir = abspath(joinpath(@__DIR__,".."))*"neper/2D_crystal"
+    package_dir = abspath(joinpath(@__DIR__,".."))*"neper/2D_crystal/"
 
     for id in 1:2
         for i in 5:10
@@ -12,4 +12,4 @@ function main()
         end
     end
 end
-main()
+#main()

@@ -18,7 +18,7 @@ mutable struct Bfixed{R,VR,VC} <: Finder
 end
 
 function Bfixed(solver, ecrit::R, shortholdtime, longholdtime, jinit::R, jrelstep::R, startB::R, max_steps) where {R}
-    mode = JC2DInitHold()
+    mode = JcInitHold()
     timesteps = 0
     curholdsteps = 0
     e_field = zero(R)
@@ -51,7 +51,7 @@ function step!(finder::Bfixed)
     finder.a_prev = state(finder).a
 
     #update boundary conditions
-    jc2d_bcs!(finder,sys)
+    jc_bcs!(finder,sys)
 
     #call london multigrid
     step_data = MulTDGL.step!(finder.solver, finder.δda_rhs, (finder.j,0.0)) 
@@ -68,7 +68,7 @@ function find_jc(f_jc::Bfixed,verbose::Bool=true)
     e_field = Vector{Float64}([])
 
     starttime = time()
-    while f_jc.mode != JC2DDone()
+    while f_jc.mode != JcDone()
         push!(b_field,f_jc.B_field)
         push!(current,f_jc.j)
         push!(e_field,f_jc.E_field)
