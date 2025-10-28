@@ -140,12 +140,12 @@ vec3([-0.5,0.5,-0.5]),vec3([-0.5,-0.5,0.5]),vec3([0.5,-0.5,-0.5])]
 
 #NxNxN points distributed evenly throughout the cube 
 const N = 5
-const VOLUME_FRAC = 1/(N^3)
+const VOLUME_FRAC::Float32 = 1/(N^3)
 PRECISE::Vector{vec3} = [vec3(([i,j,k]/(N-1)).-0.5) for i in 0:N-1 for j in 0:N-1 for k in 0:N-1]
 
 "Use a more expensive stencil to estimate volume of pixel inside triangle"
-function precise_area(point,tri_data::TriangleData)
-    val = 0.0
+function precise_area(point,tri_data::TriangleData)::Float32
+    val = Float32(0.0)
     for vec in PRECISE
         if inside_triangle(point.+vec,tri_data)
             val += VOLUME_FRAC
@@ -155,11 +155,11 @@ function precise_area(point,tri_data::TriangleData)
 end
 
 "return a value between 0 and 1 based on volume of pixel inside triangle"
-function triangle_weight(point,tri_data::TriangleData)::Float64
-    val = 0.0
+function triangle_weight(point,tri_data::TriangleData)::Float32
+    val = Float32(0.0)
     @simd for off in OFFSETS
         if inside_triangle(point.+off,tri_data)
-            val += 0.125
+            val += Float32(0.125)
         end
     end
     if val > 0.0 && val < 1.0
@@ -223,7 +223,7 @@ end
 tri_area(a,b,c) = 0.5 * norm(cross(b - a, c - a))
 
 function create_3D_mesh(tess::Lattice3D,dims,thick,verbose=false)
-    mesh = zeros(dims)
+    mesh = zeros(Float32,dims)
 
     start_t = time()
     actual_volume = 0
@@ -241,14 +241,14 @@ function create_3D_mesh(tess::Lattice3D,dims,thick,verbose=false)
 
     println("Created mesh with fractional GB volume = $(round(actual_volume/prod(dims),sigdigits=4)) in $(round(δt,sigdigits=4))s")
     println("Percent Volume Error = $(round(100*(actual_volume-calc_volume)/actual_volume,sigdigits=4))%")
-    return map(m->min(m,1.0),mesh)
+    return map(m->min(m,Float32(1.0)),mesh)
 end
 
 function interpolate_edges(mesh,periodic)
     dims = size(mesh)
-    meshx = zeros((dims[1]-1+periodic[1],dims[2],dims[3]))
-    meshy = zeros((dims[1],dims[2]-1+periodic[2],dims[3]))
-    meshz = zeros((dims[1],dims[2],dims[3]-1+periodic[3]))
+    meshx = zeros(Float32, (dims[1]-1+periodic[1],dims[2],dims[3]))
+    meshy = zeros(Float32, (dims[1],dims[2]-1+periodic[2],dims[3]))
+    meshz = zeros(Float32, (dims[1],dims[2],dims[3]-1+periodic[3]))
 
     for I in CartesianIndices(meshx)
         meshx[I] = 0.5 * (mesh[I] + mesh[mod1(I[1]+1,dims[1]),I[2],I[3]])
