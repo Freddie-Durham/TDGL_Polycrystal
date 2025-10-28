@@ -1,7 +1,7 @@
 name = "TDGL_Polycrystal"
 uuid = "e82e0110-f70c-49c9-9768-8921ed475bca"
 authors = ["Freddie-Durham <wzjr67@durham.ac.uk>"]
-version = "0.1.0"
+version = "0.1.8"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"

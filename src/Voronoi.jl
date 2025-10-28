@@ -239,7 +239,7 @@ function create_3D_mesh(tess::Lattice3D,dims,thick,verbose=false)
     calc_volume = sum(mesh)
     δt = time() - start_t
 
-    println("Created mesh with fractional GB volume = $(round(Int,actual_volume/prod(dims))) in $(round(δt,sigdigits=4))s")
+    println("Created mesh with fractional GB volume = $(round(actual_volume/prod(dims),sigdigits=4)) in $(round(δt,sigdigits=4))s")
     println("Percent Volume Error = $(round(100*(actual_volume-calc_volume)/actual_volume,sigdigits=4))%")
     return map(m->min(m,1.0),mesh)
 end

@@ -11,7 +11,7 @@ using Adapt
 using ArgParse
 using Random
 
-const Version = "0.1.7" 
+const Version = "0.1.8" 
 
 include("Defs.jl")
 include("Utilities.jl")

@@ -29,6 +29,8 @@ function JcFinder(solver, ecrit::R, initholdtime, jholdtime, jinit::R, jrelstep:
     δda_rhs = MulTDGL.similar(MulTDGL.state(solver).a)
     data(δda_rhs) .= zero(eltype(data(δda_rhs)))
 
+    println("Initial Current = $jinit")
+
     JcFinder(solver,
                mode,
                ecrit,
@@ -90,8 +92,9 @@ function step!(finder::JcFinder{N}) where {N}
     parameters = sys.p
 
     jc_bcs!(finder,sys)
-    applied_current = NTuple{N,eltype(finder.j)}(zeros(eltype(finder.j),N))
-    applied_current[1] = finder.j
+    current_array = zeros(eltype(finder.j),N)
+    current_array[1] = finder.j
+    applied_current = NTuple{N,eltype(finder.j)}(current_array)
 
     #call london multigrid
     step_data = MulTDGL.step!(finder.solver, finder.δda_rhs, applied_current) 
@@ -125,7 +128,7 @@ function step!(finder::JcFinder{N}) where {N}
                     finder.mode = JcDone()
                 else
                     finder.curholdsteps = 0
-                    increment_J!(finder)   #linear decrease in J ramping
+                    increment_J!(finder)   
                     finder.esum = zero(typeof(finder.esum))
                 end
             end
