@@ -159,7 +159,6 @@ function get_3D_material(init_α,init_β,init_m⁻¹,init_σ,pixels,pattern,norm
     #relative weights of nodes based on whether inside or outside grain boundaries
     weights = apply_3D_pattern(pattern,pixels,elemextent(m, ()))
 
-    println("Mesh size = $(sizeof(weights))")
     #apply pattern to normalised α value
     start_α = map(w->linear_interp(init_α,alphaN,w), weights)
     α = RectPrimalForm0Data(m, adapt(backend, reshape(start_α, :)))
@@ -168,7 +167,6 @@ function get_3D_material(init_α,init_β,init_m⁻¹,init_σ,pixels,pattern,norm
     β = RectPrimalForm0Data(m, adapt(backend, reshape(start_β, :)))
 
     weights_x,weights_y,weights_z = interpolate_edges(weights,m.periodic)
-    println("Mesh x size = $(sizeof(weights_x))")
 
     σ = RectPrimalForm1Data(m, adapt(backend, vcat(
         reshape(map(w->linear_interp(init_σ,1/norm_resist,w),weights_x),:),
