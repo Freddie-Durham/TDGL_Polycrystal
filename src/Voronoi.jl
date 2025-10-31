@@ -196,27 +196,23 @@ function fan_triangle(verts)
     return triangles
 end
 
-"take a face from a voronoi tessellation and return a list of vertices of triangles to construct the face"
-function triangulate(tess::Lattice3D{T,K},face::Face) where {T,K}
+"take a face from a voronoi tessellation and return a list of vertices to construct the face"
+function get_verts(tess::Lattice3D{T,K},face::Face) where {T,K}
     edges::Vector{Vector{K}} = map(face.p) do e
         edge = tess.edges(abs(e)).p
         return sign(e)>0 ? edge : [edge[2],edge[1]]
     end
     verts::Vector{Vector{T}} = map(e->tess.vertices[e[1]].p,edges)
-    return fan_triangle(verts)
+    return verts
 end
 
-"loop over all 27 unit cells and attempt to draw all triangles. 
-this is fine since when drawing triangles we calculate our bounding box to be strictly inside the mesh."
-function draw_periodic_triangle!(mesh,a,b,c,thick)
-    dims = size(mesh)
-    shifts = [-1, 0, 1]
+"Draw a face from its vertices onto a 3D mesh and return its volume"
+function draw_face!(mesh,verts,thick)
+    triangles = fan_triangle(verts)
 
-    for dx in shifts, dy in shifts, dz in shifts
-        shift = (dx*dims[1], dy*dims[2], dz*dims[3])
-        A,B,C = map(v->v.+shift,(a,b,c))
-        
-        draw_slab!(mesh,A,B,C,thick)
+    for tri in triangles
+        a,b,c = map(t->t,tri)
+        draw_slab!(mesh,a,b,c,thick)
     end
 end
 
@@ -226,22 +222,29 @@ function create_3D_mesh(tess::Lattice3D,dims,thick,verbose=false)
     mesh = zeros(Float32,dims)
 
     start_t = time()
-    actual_volume = 0
+    shifts = [[x,y,z] for x in -1:1 for y in -1:1 for z in -1:1]
+    vert_dict = Dict{Tuple,Bool}()
     for (_,face) in tess.faces
-        triangles = triangulate(tess,face)
-        for tri in triangles
-            a,b,c = map(t->t.*dims,tri)
+        verts = get_verts(tess,face)
 
-            draw_periodic_triangle!(mesh,a,b,c,thick)
-            actual_volume += tri_area(a,b,c)*thick
+        #loop over all 27 units cells to account for periodicity
+        for shift in shifts
+            shift_verts = map(v->(v.+shift).*dims,verts)
+            floor_tuple = Tuple(sort(map(v->floor.(Int,v),shift_verts)))
+        
+            if !haskey(vert_dict,floor_tuple)
+                draw_face!(mesh,shift_verts,thick)
+                vert_dict[floor_tuple] = true
+            end
         end
     end
     calc_volume = sum(mesh)
     δt = time() - start_t
 
-    println("Created mesh with fractional GB volume = $(round(actual_volume/prod(dims),sigdigits=4)) in $(round(δt,sigdigits=4))s")
-    println("Percent Volume Error = $(round(100*(actual_volume-calc_volume)/actual_volume,sigdigits=4))%")
-    return map(m->min(m,Float32(1.0)),mesh)
+    if verbose
+        println("Created mesh with fractional GB volume = $(round(calc_volume/prod(dims),sigdigits=4)) in $(round(δt,sigdigits=4))s")
+    end
+    return min.(mesh,Float32(1.0))
 end
 
 function interpolate_edges(mesh,periodic)

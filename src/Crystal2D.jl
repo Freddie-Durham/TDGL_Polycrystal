@@ -332,23 +332,45 @@ function interp_edgesX(mesh,periodic_x)
     return new_mesh
 end
 
-function create_2D_tessellation(filename,dims,GB_thick)
-    lattice = Lattice2D(filename)
-    mesh = zeros(dims)
+struct Line{T <: AbstractVector}
+    origin::T
+    destination::T
+end
 
+line_inside_box(line::Line,dims) = (all(line.origin.>1) && all(line.origin.<dims)) || (all(line.destination.>1) && all(line.destination.<dims))
+
+"process .tess file and draw anti-aliased lines in a periodic mesh. have to check for overdrawing of lines"
+function create_2D_tessellation(filename,dims,GB_thick)
+    lattice = TDGL_Polycrystal.Lattice2D(filename)
+    mesh = zeros(dims)
+    offsets = [[x,y] for x in [-1,0,1]*dims[1] for y in [-1,0,1]*dims[2]]
+
+    line_dict = Dict{Tuple,Line}()
     for (_,edge) in lattice.edges
         orig = lattice.vertices[edge.p[1]].p.*dims
         dest = lattice.vertices[edge.p[2]].p.*dims
 
-        for offset in [[x,y] for x in [-1,0,1] for y in [-1,0,1]]
-            new_orig = orig.+offset.*dims
-            new_dest = dest.+offset.*dims
-        
-            simple_line!(mesh, new_orig, new_dest, GB_thick)
+        for offset in offsets
+            new_orig = orig.+offset
+            new_dest = dest.+offset
+            new_line = Line(new_orig,new_dest)
+
+            if line_inside_box(new_line,dims)
+                if new_orig[1] < new_dest[1]
+                    approx_line = (round.(new_orig),round.(new_dest))
+                else
+                    approx_line = (round.(new_dest),round.(new_orig))
+                end
+
+                if !haskey(line_dict,approx_line)
+                    line_dict[approx_line] = new_line
+                    TDGL_Polycrystal.simple_line!(mesh, new_line.origin, new_line.destination, GB_thick)
+                end
+            end
         end
     end
 
-    return map((x)->min(1.0,x),mesh) 
+    return min.(1.0,mesh) 
 end
 
 "takes in grain size and grain boundary thickness in pixels"
