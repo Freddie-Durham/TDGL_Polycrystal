@@ -20,7 +20,7 @@ mutable struct JcFinder{N,R,VR,VC} <: Finder
 end
 
 "constructor for JcFinder. Does not initialise BCs"
-function JcFinder(solver, ecrit::R, initholdtime, jholdtime, jinit::R, jrelstep::R, b_field::R) where {R}
+function JcFinder(solver::ImplicitLondonMultigridSolver{N,R,VR,VC}, ecrit, initholdtime, jholdtime, jinit, jrelstep, b_field) where {N,R,VR,VC}
     mode = JcInitHold()
     timesteps = 0
     curholdsteps = 0
@@ -29,21 +29,19 @@ function JcFinder(solver, ecrit::R, initholdtime, jholdtime, jinit::R, jrelstep:
     δda_rhs = MulTDGL.similar(MulTDGL.state(solver).a)
     data(δda_rhs) .= zero(eltype(data(δda_rhs)))
 
-    println("Initial Current = $jinit")
-
     JcFinder(solver,
                mode,
-               ecrit,
+               R(ecrit),
                initholdtime,
                jholdtime,
                timesteps,
                curholdsteps,
-               jinit,
-               jrelstep,
+               R(jinit),
+               R(jrelstep),
                e_field,
                esum,
                δda_rhs,
-               b_field,
+               R(b_field),
                solver.state_u[1])
 end
 

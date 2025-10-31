@@ -156,17 +156,16 @@ end
 
 function simple_line!(mesh, orig, dest, thick)
     dims = size(mesh)
-
     box = make_box(orig,dest,thick/2)
-    box_x = map(x->round(Int,x[1]),box)
-    box_y = map(x->round(Int,x[2]),box)
 
-    for xpxl in minimum(box_x):maximum(box_x)
-        for ypxl in minimum(box_y):maximum(box_y)
-            if is_safe([xpxl,ypxl],dims)
-                mesh[xpxl,ypxl] += area_inside_box([xpxl,ypxl],box)
-            end
-        end
+    mins = floor.(Int32,reduce((a,b)->min.(a,b),box))
+    maxes = ceil.(Int32,reduce((a,b)->max.(a,b),box))
+
+    lims = [clamp(mins[i],1,dims[i]):clamp(maxes[i],1,dims[i]) for i in 1:2]
+    boundingbox = CartesianIndices((lims[1],lims[2]))
+
+    @inbounds @simd for I in boundingbox
+        mesh[I] += area_inside_box(I.I,box)
     end
 end
 
@@ -333,11 +332,23 @@ function interp_edgesX(mesh,periodic_x)
     return new_mesh
 end
 
-"return a vector of zeros with only the 'ind'th index populated"
-function selector(vec,ind::Integer)
-    new = zeros(length(vec))
-    new[ind] = vec[ind]
-    return new
+function create_2D_tessellation(filename,dims,GB_thick)
+    lattice = Lattice2D(filename)
+    mesh = zeros(dims)
+
+    for (_,edge) in lattice.edges
+        orig = lattice.vertices[edge.p[1]].p.*dims
+        dest = lattice.vertices[edge.p[2]].p.*dims
+
+        for offset in [[x,y] for x in [-1,0,1] for y in [-1,0,1]]
+            new_orig = orig.+offset.*dims
+            new_dest = dest.+offset.*dims
+        
+            simple_line!(mesh, new_orig, new_dest, GB_thick)
+        end
+    end
+
+    return map((x)->min(1.0,x),mesh) 
 end
 
 "takes in grain size and grain boundary thickness in pixels"
@@ -347,28 +358,5 @@ function draw_lattice(dims,filename,id,grain_size,GB_thick)
     if !isfile(filename*".tess")
         run(`neper -T -n from_morpho -morpho "graingrowth($grain_size)" -dim 2 -periodicity 1 -id $id -o $filename`)
     end
-
-    lattice = Lattice2D(filename)
-    mesh = zeros(dims)
-
-    for (_,edge) in lattice.edges
-        orig = lattice.vertices[edge.p[1]].p.*dims
-        dest = lattice.vertices[edge.p[2]].p.*dims
-        simple_line!(mesh, orig, dest, GB_thick)
-
-        #apply periodicity condition
-        for i in eachindex(dims)
-            diff = selector(dims,i)
-            for compare in [dest,orig]
-                if compare[i] > dims[i]
-                    simple_line!(mesh, orig .- diff, dest .- diff, GB_thick)
-                end
-                if compare[i] < 1
-                    simple_line!(mesh, orig .+ diff, dest .+ diff, GB_thick)
-                end
-            end
-        end
-    end
-
-    return map((x)->min(1.0,x),mesh) 
+    return create_2D_tessellation(filename,dims,GB_thick)
 end
