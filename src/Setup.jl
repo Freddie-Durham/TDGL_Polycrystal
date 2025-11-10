@@ -250,7 +250,7 @@ function simulation_setup_3D(vortex_radius,pattern,tstep,GL,init_σ,norm_resist,
     "α_s" => init_alpha, "β_s" => init_beta, "α_n" => alphaN, "β_n" => betaN,
     "GB Effective Mass" => norm_mass, "GB Resistivity" => norm_resist, "SC Effective Mass" => 1.0/init_m⁻¹, "SC Resistivity" => 1.0/init_σ,
     "Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
-    "J ramp" => f_jc.jrelstep, "E criterion" => Ecrit,"Date" => string(now()),
+    "J ramp" => Jramp, "E criterion" => Ecrit,"Date" => string(now()),
     "Backend" => bknd, "Random seed" => rng_seed,"Finder" => string(finder),
     "MulTDGL Version no." => string(pkgversion(MulTDGL)), "TDGL_Polycrystal Version no." => Version)
     
