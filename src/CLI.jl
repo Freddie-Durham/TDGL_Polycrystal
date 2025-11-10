@@ -260,6 +260,11 @@ function parse_CL()
             help = "Initial current density to start Jc finding from (defaults to 0.0001)"
             arg_type = Float64
             default = 0.0001
+
+        "--ramp_mode"
+            help = "Mode of operation for finding Jc (default is linear current ramp)"
+            arg_type = String
+            default = "LIN_INCREASE"
     end
     return parse_args(s,as_symbols=true)
 end

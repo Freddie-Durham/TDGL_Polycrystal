@@ -1,17 +1,38 @@
-const EXPONENTIAL = true
 const SUBSECTION = false
 
+abstract type RampMode end
+
+struct Exp_Increase <: RampMode end
+struct Exp_Decrease <: RampMode end
+struct Linear_Increase <: RampMode end
+
+function decode_method(method::String)
+    if uppercase(method) == "EXP_INCREASE"
+        return Exp_Increase
+    elseif uppercase(method) == "EXP_DECREASE"
+        return Exp_Decrease
+    elseif uppercase(method) == "LIN_INCREASE"
+        return Linear_Increase
+    else
+        error("Unknown ramp method: $method")
+    end
+end
+
+struct Ramp_Method{T<:RampMode,R}
+    J_init::R
+    J_relstep::R
+    E_crit::R
+    Init_Hold_Time::Int64
+    J_Hold_Time::Int64
+end
+
 "wrapper around the london multigrid solver for determining the critical current density"
-mutable struct JcFinder{N,R,VR,VC} <: Finder
+mutable struct JcFinder{N,R,VR,VC,T} <: Finder
     solver::ImplicitLondonMultigridSolver{N,R,RectPrimalForm0Data{N,R,VR},RectPrimalForm1Data{N,R,VR},RectPrimalForm0Data{N,Complex{R},VC},RectPrimalForm1Data{N,Complex{R},VC}}
     mode::JcMode
-    ecrit::R
-    initholdtime::Int64
-    jholdtime::Int64
-    timesteps::Int64
     curholdsteps::Int64
+    ramp_method::Ramp_Method{T}
     j::R
-    jrelstep::R
     E_field::R
     esum::R
     δda_rhs::RectPrimalForm1Data{N,R,VR}
@@ -20,24 +41,21 @@ mutable struct JcFinder{N,R,VR,VC} <: Finder
 end
 
 "constructor for JcFinder. Does not initialise BCs"
-function JcFinder(solver::ImplicitLondonMultigridSolver{N,R,VR,VC}, ecrit, initholdtime, jholdtime, jinit, jrelstep, b_field) where {N,R,VR,VC}
+function JcFinder(solver::ImplicitLondonMultigridSolver{N,R,VR,VC}, ecrit, initholdtime, jholdtime, jinit, jrelstep, b_field, method) where {N,R,VR,VC}
     mode = JcInitHold()
-    timesteps = 0
     curholdsteps = 0
     e_field = zero(R)
     esum = zero(R)
     δda_rhs = MulTDGL.similar(MulTDGL.state(solver).a)
     data(δda_rhs) .= zero(eltype(data(δda_rhs)))
 
+    ramp_method = Ramp_Method{decode_method(method),R}(R(jinit), R(jrelstep), R(ecrit), initholdtime, jholdtime)
+
     JcFinder(solver,
                mode,
-               R(ecrit),
-               initholdtime,
-               jholdtime,
-               timesteps,
                curholdsteps,
-               R(jinit),
-               R(jrelstep),
+               ramp_method,
+               ramp_method.J_init,
                e_field,
                esum,
                δda_rhs,
@@ -67,11 +85,44 @@ function E_field_avg(s::ImplicitLondonMultigridSolver,a_prev,frac=0)
     return (-dAdt_avg -∇ϕ_avg) * δh / measure(m)
 end
 
-function increment_J!(finder::JcFinder)
-    if EXPONENTIAL
-        finder.j *= finder.jrelstep
-    else
-        finder.j += finder.jrelstep
+function next_step!(finder,ramp::Ramp_Method{Exp_Increase,R},parameters) where {R}
+    if finder.E_field < ramp.E_crit
+        finder.curholdsteps = 0
+        finder.j *= R(1 + ramp.J_relstep)
+    elseif finder.curholdsteps >= ramp.J_Hold_Time / parameters.k
+        finder.curholdsteps = 0
+        finder.mode = JcDone()
+    end
+end
+
+function next_step!(finder,ramp::Ramp_Method{Linear_Increase,R},parameters) where {R}
+    if finder.E_field < ramp.E_crit
+        finder.curholdsteps = 0
+        finder.j += ramp.J_relstep
+    elseif finder.curholdsteps >= ramp.J_Hold_Time / parameters.k
+        finder.curholdsteps = 0
+        finder.mode = JcDone()
+    end
+end
+
+function next_step!(finder,ramp::Ramp_Method{Exp_Decrease,R},parameters) where {R}
+    half_time = round(Int,ramp.J_Hold_Time / (2 * parameters.k))
+    
+    #start recording E field after half the hold time
+    if finder.curholdsteps > half_time
+        finder.esum += finder.E_field
+
+        #after full hold time, check average E field vs E crit
+        if finder.curholdsteps >= ramp.J_Hold_Time / parameters.k
+            if finder.esum > ramp.E_crit * half_time
+                finder.curholdsteps = 0
+                finder.j *= R(1 - ramp.J_relstep)
+            else
+                finder.curholdsteps = 0
+                finder.mode = JcDone()
+            end
+            finder.esum = zero(R)
+        end
     end
 end
 
@@ -85,52 +136,28 @@ function calculate_E!(finder::JcFinder,step_data)
 end
 
 "Run simulation for a given B field. Ramp from J_init until E crit is exceeded"
-function step!(finder::JcFinder{N}) where {N}
+function step!(finder::JcFinder{N,R}) where {N,R}
     sys = system(finder)
     parameters = sys.p
 
     jc_bcs!(finder,sys)
-    current_array = zeros(eltype(finder.j),N)
+    current_array = zeros(R,N)
     current_array[1] = finder.j
-    applied_current = NTuple{N,eltype(finder.j)}(current_array)
+    applied_current = NTuple{N,R}(current_array)
 
     #call london multigrid
     step_data = MulTDGL.step!(finder.solver, finder.δda_rhs, applied_current) 
     
     calculate_E!(finder,step_data)
-    finder.timesteps += 1
     finder.curholdsteps += 1
-    finder.esum += finder.E_field
 
     if finder.mode == JcInitHold()
-        if finder.curholdsteps > finder.initholdtime / parameters.k - 0.5
+        if finder.curholdsteps >= finder.ramp_method.Init_Hold_Time / parameters.k
             finder.curholdsteps = 0
             finder.mode = JcJHold()
-            finder.esum = zero(typeof(finder.esum))
         end
     elseif finder.mode == JcJHold()
-        if finder.jrelstep > zero(typeof(finder.jrelstep))
-            if finder.E_field < finder.ecrit
-                finder.curholdsteps = 0
-                increment_J!(finder)
-                finder.esum = zero(typeof(finder.esum))
-            elseif finder.curholdsteps > finder.jholdtime / parameters.k - 0.5
-                finder.curholdsteps = 0
-                finder.mode = JcDone()
-            end
-        else
-            if finder.curholdsteps > finder.jholdtime / parameters.k - 0.5
-                eavg = finder.esum / finder.curholdsteps
-                if eavg < finder.ecrit
-                    finder.curholdsteps = 0
-                    finder.mode = JcDone()
-                else
-                    finder.curholdsteps = 0
-                    increment_J!(finder)   
-                    finder.esum = zero(typeof(finder.esum))
-                end
-            end
-        end
+       next_step!(finder,finder.ramp_method,parameters)
     end
 end
 
