@@ -57,29 +57,33 @@ function run_simulation(;uID,startB,stopB,stepB,
         else    
             TDGL_Polycrystal.key_metadata(sim_grid,weights,metadata)
         end
+        create_group(fid,"data")
+    end
+    println("Setup Complete")
 
-        println("Setup Complete")
+    #iterate through B fields, recording data and shot-specific metadata
+    for B in B_range
+        finder = TDGL_Polycrystal.new_finder(
+        finder,FindType,Ecrit,holdtime,init_hold,Jramp,J_initial,B,tol,levelcount,backend,rng_seed,ramp_mode)
 
-        #create folder for current campaign
-        campaign_group = create_group(fid,"data")
-    
-        #iterate through B fields, recording data and shot-specific metadata
-        for B in B_range
-            finder = TDGL_Polycrystal.new_finder(
-            finder,FindType,Ecrit,holdtime,init_hold,Jramp,J_initial,B,tol,levelcount,backend,rng_seed,ramp_mode)
+        println("Running simulation with B = $(B)")
+        sim_data, timetaken = find_jc(finder)
 
-            println("Running simulation with B = $(B)")
-            sim_data, timetaken = find_jc(finder)
-
+        h5open(filepath,"w") do fid
+            campaign_group = fid["data"]
             shot_metadata = Dict("Applied field" => B,"Time taken" => timetaken)
             data_group = create_group(campaign_group,"$(B)b data")
             TDGL_Polycrystal.save_data(header,sim_data,data_group)
             for (key,val) in shot_metadata 
                 HDF5.attributes(data_group)[key] = val
             end
-        end 
-        HDF5.attributes(sim_grid)["WallTime"] = time()-init_time
+        end
     end 
+
+    h5open(filepath,"w") do fid
+        HDF5.attributes(fid["grid"])["WallTime"] = time()-init_time
+    end
+    
     println("Simulation complete, time taken = $(time()-init_time)")  
 end
 

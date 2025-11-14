@@ -114,7 +114,7 @@ function next_step!(finder,ramp::Ramp_Method{Exp_Decrease,R},parameters) where {
 
         #after full hold time, check average E field vs E crit
         if finder.curholdsteps >= ramp.J_Hold_Time / parameters.k
-            if finder.esum > ramp.E_crit * half_time
+            if abs(finder.esum) > ramp.E_crit * half_time
                 finder.curholdsteps = 0
                 finder.j *= R(1 - ramp.J_relstep)
             else
