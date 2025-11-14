@@ -69,7 +69,7 @@ function run_simulation(;uID,startB,stopB,stepB,
         println("Running simulation with B = $(B)")
         sim_data, timetaken = find_jc(finder)
 
-        h5open(filepath,"w") do fid
+        h5open(filepath,"r+") do fid
             campaign_group = fid["data"]
             shot_metadata = Dict("Applied field" => B,"Time taken" => timetaken)
             data_group = create_group(campaign_group,"$(B)b data")
@@ -80,7 +80,7 @@ function run_simulation(;uID,startB,stopB,stepB,
         end
     end 
 
-    h5open(filepath,"w") do fid
+    h5open(filepath,"r+") do fid
         HDF5.attributes(fid["grid"])["WallTime"] = time()-init_time
     end
     
