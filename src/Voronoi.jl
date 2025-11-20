@@ -126,7 +126,7 @@ function inside_triangle(p,T::TriangleData)::Bool
     u = (T.abab * apac - T.abac * apab)*T.inv_denom
     v = (T.acac * apab - T.abac * apac)*T.inv_denom
 
-    if (u>=0) & (v>=0) & (v+u<=1) #check if within triangle inside plane
+    if (u>=0) & (v>=0) & (v+u<=1) #check if within triangle in plane
         return true
     else
         return false

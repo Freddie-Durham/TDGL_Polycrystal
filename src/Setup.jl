@@ -1,4 +1,4 @@
-"applies boundary conditions on every timestep, modifying finder. depends on whether boundaries are periodic in both directions or only one"
+"applies boundary conditions for current density on every timestep, modifying finder. depends on whether boundaries are periodic in both directions or only one"
 function jc_bcs!(finder::Finder,sys::System)
     if sys.m.periodic[1] && !sys.m.periodic[2] && length(sys.m.periodic) == 2
         # for non-periodic systems, a change in the applied field
@@ -21,11 +21,11 @@ function jc_bcs!(finder::Finder,sys::System)
 end
 
 "Sets gauge function to fix discontinuity in vector potential due to applied magnetic field in full periodic BCs using fluxon number"
-function set_fluxons!(c,dc,B,mesh,backend)
+function set_fluxons!(c,dc,B,mesh)
+    backend = KernelAbstractions.get_backend(data(c))
     #flux = fluxoncount * 2π
     #B field = flux / area
     #assume B field always in z direction for now
-
     flux = B * mesh.extent[1] * mesh.h[1] * mesh.extent[2] * mesh.h[2]
 
     fluxoncount = round(flux/2π)
@@ -41,7 +41,16 @@ function set_fluxons!(c,dc,B,mesh,backend)
     else #for 2D periodic systems
         asarray(c, 2)[:, end] .= adapt(backend, [fluxoncount * (i - 1) / n  * 2π for i in 1:n])
         asarray(dc, 1, 2)[:, end] .= fluxoncount / n * 2π
+    end
+end
 
+"modify the magnetic vector potential in the system to apply a new B field"
+function apply_B_field!(finder,B)
+    finder.B_field = B
+    sys = MulTDGL.system(finder.solver)
+    mesh = sys.m
+    if all(mesh.periodic)
+        set_fluxons!(sys.c,sys.dc,finder.B_field,mesh)
     end
 end
 
@@ -61,7 +70,7 @@ function jc_system(n1, n2, mesh::RectMesh{N,R}, params, material, backend, B_fie
         # vector potential is essentially the connection. by putting a
         # twist in the bundle we can have any whole number of flux
         # quanta even in a periodic domain (a flat torus)
-        set_fluxons!(c,dc,B_field,mesh,backend)
+        set_fluxons!(c,dc,B_field,mesh)
     end
 
     # parallel transport (updated automatically)
@@ -272,8 +281,8 @@ function new_solver(solver::ImplicitLondonMultigridSolver{N,R,VR,VC},B_field,tol
 end
 
 "Create a new finder for a new B field and applied current density"
-function new_finder(F::Finder,findtype,Ecrit,wait_time,init_hold_time,Jramp,J_init,B_init,tol,levelcount,backend,rng,args...)
-    s = new_solver(F.solver,B_init,tol,levelcount,get_backend(backend),rng)
-    return findtype(s,Ecrit,init_hold_time,wait_time,J_init,Jramp,B_init,args...)
+function new_finder(F::Finder,findtype,Ecrit,wait_time,init_hold_time,Jramp,J_init,B_field,tol,levelcount,backend,rng,args...)
+    s = new_solver(F.solver,B_field,tol,levelcount,get_backend(backend),rng)
+    return findtype(s,Ecrit,init_hold_time,wait_time,J_init,Jramp,B_field,args...)
 end
 

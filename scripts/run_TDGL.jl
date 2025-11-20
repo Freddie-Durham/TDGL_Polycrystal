@@ -66,6 +66,7 @@ function run_simulation(;uID,startB,stopB,stepB,
             end
         end 
         HDF5.attributes(sim_grid)["WallTime"] = time()-init_time
+        
     end 
     println("Simulation complete, time taken = $(time()-init_time)")  
 end

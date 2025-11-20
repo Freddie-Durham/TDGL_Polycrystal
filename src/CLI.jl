@@ -32,6 +32,13 @@ function save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_�
     end
 end
 
+function save_state(finder::Finder,state_group)
+    s = state(finder)
+    for (lbl,vals) in zip(["ψ","a","φ"],[s.ψ,s.a,s.φ])
+        state_group[lbl] = adapt(CPU(),data(vals))
+    end
+end
+
 "iterate through header and save data to HDF5 file"
 function save_data(header,sim_data,data_group)
     for (i,h) in enumerate(header)
@@ -265,6 +272,16 @@ function parse_CL()
             help = "Mode of operation for finding Jc (default is linear current ramp)"
             arg_type = String
             default = "LIN_INCREASE"
+        
+        "--save_states"
+            help = "Boolean value determining whether to save the simulation state after each B field step"
+            arg_type = Bool
+            default = false
+
+        "--continuous"
+            help = "Boolean value determining whether to continue from the state reached at the previous B field or start anew"
+            arg_type = Bool
+            default = false
     end
     return parse_args(s,as_symbols=true)
 end

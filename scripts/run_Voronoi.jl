@@ -4,7 +4,8 @@ using HDF5
 function run_simulation(;uID,startB,stopB,stepB,
     pixels_per_xi,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
     ramp_mode,Ecrit,Jramp,J_initial,holdtime,init_hold,grain_size,thickness,
-    xmin,ymin,zmin,yperiodic,zperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,voronoi_seed,dims,kwargs...)
+    xmin,ymin,zmin,yperiodic,zperiodic,alphaN,betaN,init_alpha,init_beta,backend,
+    rng_seed,voronoi_seed,dims,save_states,continuous,kwargs...)
     init_time = time()
 
     stopB = startB + stopB
@@ -57,20 +58,33 @@ function run_simulation(;uID,startB,stopB,stepB,
         else    
             TDGL_Polycrystal.key_metadata(sim_grid,weights,metadata)
         end
-        create_group(fid,"data")
+        data_group = create_group(fid,"data")
+        if save_states
+            create_group(data_group, "save_state")
+        end
     end
     println("Setup Complete")
 
     #iterate through B fields, recording data and shot-specific metadata
     for B in B_range
-        finder = TDGL_Polycrystal.new_finder(
-        finder,FindType,Ecrit,holdtime,init_hold,Jramp,J_initial,B,tol,levelcount,backend,rng_seed,ramp_mode)
+        if !continuous || B == B_range[1]
+            finder = TDGL_Polycrystal.new_finder(
+            finder,FindType,Ecrit,holdtime,init_hold,Jramp,J_initial,B,tol,levelcount,backend,rng_seed,ramp_mode)
+        else
+            apply_B_field!(finder,B)
+            finder.j *= 1.2 
+            finder.mode = JcInitHold()
+        end
 
         println("Running simulation with B = $(B)")
         sim_data, timetaken = find_jc(finder)
 
         h5open(filepath,"r+") do fid
             campaign_group = fid["data"]
+            if save_states #save latest state of simulation after each B field
+                TDGL_Polycrystal.save_state(finder,campaign_group["save_state"])
+            end
+
             shot_metadata = Dict("Applied field" => B,"Time taken" => timetaken)
             data_group = create_group(campaign_group,"$(B)b data")
             TDGL_Polycrystal.save_data(header,sim_data,data_group)
@@ -82,6 +96,9 @@ function run_simulation(;uID,startB,stopB,stepB,
 
     h5open(filepath,"r+") do fid
         HDF5.attributes(fid["grid"])["WallTime"] = time()-init_time
+        if save_states #remove save_state group to save space
+            delete_object(fid,"data/save_state") 
+        end
     end
     
     println("Simulation complete, time taken = $(time()-init_time)")  

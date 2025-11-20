@@ -26,5 +26,5 @@ include("CLI.jl")
 
 export JcFinder, Bfixed, BVarLinXFinder, simulation_setup, simulation_setup_3D,
     parse_CL, to_string, save_metadata, save_simdata, find_jc, apply_pattern,
-    JcInitHold, JcJHold, JcDone, BVarLinX, EvsJ, step!
+    JcInitHold, JcJHold, JcDone, BVarLinX, EvsJ, step!, apply_B_field!
 end #module TDGL_Polycrystal
