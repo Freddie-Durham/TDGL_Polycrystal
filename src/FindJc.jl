@@ -85,7 +85,7 @@ function E_field_avg(s::ImplicitLondonMultigridSolver,a_prev,frac=0)
     return (-dAdt_avg -∇ϕ_avg) * δh / measure(m)
 end
 
-function next_step!(finder,ramp::Ramp_Method{Exp_Increase,R},parameters) where {R}
+function next_step!(finder,ramp::Ramp_Method{Exp_Increase, R},parameters) where {R}
     if finder.E_field < ramp.E_crit
         finder.curholdsteps = 0
         finder.j *= R(1 + ramp.J_relstep)
@@ -95,7 +95,7 @@ function next_step!(finder,ramp::Ramp_Method{Exp_Increase,R},parameters) where {
     end
 end
 
-function next_step!(finder,ramp::Ramp_Method{Linear_Increase,R},parameters) where {R}
+function next_step!(finder,ramp::Ramp_Method{Linear_Increase, R},parameters) where {R}
     if finder.E_field < ramp.E_crit
         finder.curholdsteps = 0
         finder.j += ramp.J_relstep
@@ -105,22 +105,22 @@ function next_step!(finder,ramp::Ramp_Method{Linear_Increase,R},parameters) wher
     end
 end
 
-function next_step!(finder,ramp::Ramp_Method{Exp_Decrease,R},parameters) where {R}
-    half_time = round(Int,ramp.J_Hold_Time / (2 * parameters.k))
+function next_step!(finder,ramp::Ramp_Method{Exp_Decrease, R},parameters) where {R}
+    equilibrium_steps = 15 #minimum time to reach equilibrium after taking a current step
     
-    #start recording E field after half the hold time
-    if finder.curholdsteps > half_time
+    #start recording E field after a fraction of the hold time
+    if finder.curholdsteps > equilibrium_steps
         finder.esum += finder.E_field
 
         #after full hold time, check average E field vs E crit
         if finder.curholdsteps >= ramp.J_Hold_Time / parameters.k
-            if abs(finder.esum) > ramp.E_crit * half_time
-                finder.curholdsteps = 0
+            measure_steps = finder.curholdsteps - equilibrium_steps
+            if abs(finder.esum) > ramp.E_crit * measure_steps
                 finder.j *= R(1 - ramp.J_relstep)
             else
-                finder.curholdsteps = 0
                 finder.mode = JcDone()
             end
+            finder.curholdsteps = 0
             finder.esum = zero(R)
         end
     end

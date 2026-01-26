@@ -79,7 +79,7 @@ function parse_CL()
             default = 0.0
 
         "--stopB"
-            help = "Final applied magnetic field strength"
+            help = "Final applied magnetic field strength, expressed as a difference from initial applied field"
             arg_type = Float64
             default = 0.1
 

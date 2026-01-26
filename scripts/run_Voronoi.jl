@@ -1,40 +1,40 @@
 using TDGL_Polycrystal
 using HDF5
 
-function run_simulation(;uID,startB,stopB,stepB,
-    pixels_per_xi,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
-    ramp_mode,Ecrit,Jramp,J_initial,holdtime,init_hold,grain_size,thickness,
-    xmin,ymin,zmin,yperiodic,zperiodic,alphaN,betaN,init_alpha,init_beta,backend,
-    rng_seed,voronoi_seed,dims,save_states,continuous,kwargs...)
+function run_simulation(;uID, startB, stopB, stepB, 
+    pixels_per_xi, tstep, GL, levelcount, tol, conductivity, norm_resist, norm_mass, 
+    ramp_mode, Ecrit, Jramp, J_initial, holdtime, init_hold, grain_size, thickness, 
+    xmin, ymin, zmin, yperiodic, zperiodic, alphaN, betaN, init_alpha, init_beta, backend, 
+    rng_seed, voronoi_seed, dims, save_states, continuous, kwargs...)
     init_time = time()
 
     stopB = startB + stopB
 
     #avoid difficulty with filenames that have decimal points
     if stepB >= 1 
-        campaign = "$(convert(Int64,startB))_$(convert(Int64,stopB))%B_step$(convert(Int64,stepB))"
+        campaign = "$(convert(Int64,startB))_$(convert(Int64, stopB))%B_step$(convert(Int64, stepB))"
     else
-        inv_step = convert(Int64,round(1/stepB))
-        campaign = "$(convert(Int64,round(startB)))_$(convert(Int64,round(stopB)))%B_step1_$(inv_step)"
+        inv_step = convert(Int64, round(1 / stepB))
+        campaign = "$(convert(Int64, round(startB)))_$(convert(Int64, round(stopB)))%B_step1_$(inv_step)"
     end
 
-    B_range = (startB/100):(stepB/100):(stopB/100)
+    B_range = (startB / 100):(stepB / 100):(stopB / 100)
 
     FindType = JcFinder
-    pattern = TDGL_Polycrystal.Voronoi(grain_size,thickness,voronoi_seed)
+    pattern = TDGL_Polycrystal.Voronoi(grain_size, thickness, voronoi_seed)
 
     if dims < 3
         finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(
-        pixels_per_xi,pattern,tstep,GL,conductivity,norm_resist,norm_mass,Ecrit,Jramp,
-        holdtime,init_hold,xmin,ymin,yperiodic,
-        alphaN,betaN,init_alpha,init_beta,FindType,levelcount,tol,backend,rng_seed,
-        J_initial,B_range[1],ramp_mode)
+        pixels_per_xi, pattern, tstep, GL, conductivity, norm_resist, norm_mass, Ecrit, Jramp,
+        holdtime, init_hold, xmin, ymin, yperiodic,
+        alphaN, betaN, init_alpha, init_beta, FindType, levelcount, tol, backend, rng_seed,
+        J_initial, B_range[1], ramp_mode)
     else
         finder, metadata, weights = simulation_setup_3D(
-        pixels_per_xi,pattern,tstep,GL,conductivity,norm_resist,norm_mass,Ecrit,Jramp,
-        holdtime,init_hold,xmin,ymin,zmin,yperiodic,zperiodic,
-        alphaN,betaN,init_alpha,init_beta,FindType,levelcount,tol,backend,rng_seed,
-        J_initial,B_range[1],ramp_mode)
+        pixels_per_xi, pattern, tstep, GL, conductivity, norm_resist, norm_mass, Ecrit, Jramp, 
+        holdtime, init_hold, xmin, ymin, zmin, yperiodic, zperiodic, 
+        alphaN, betaN, init_alpha, init_beta, FindType, levelcount, tol, backend, rng_seed, 
+        J_initial, B_range[1], ramp_mode)
     end
 
     path = "outputs/"
@@ -42,23 +42,23 @@ function run_simulation(;uID,startB,stopB,stepB,
     mkpath(path*name)
 
     #Save params of B field range for plotting
-    h5open("$(path)$(name)params$(convert(Int64,round(startB))).h5","w") do fid
-        current_B = create_group(fid,"params")
+    h5open("$(path)$(name)params$(convert(Int64,round(startB))).h5", "w") do fid
+        current_B = create_group(fid, "params")
         current_B["Bs"] = Vector{Float64}(B_range)
     end
 
     filepath = "$(path)$(name)$(campaign).h5"
-    header = ["Current","Electric Field"]
-    h5open(filepath,"w") do fid
+    header = ["Current", "Electric Field"]
+    h5open(filepath, "w") do fid
         sim_grid = create_group(fid,"grid")
 
         #weights is either a single 3D mesh or a tuple of 2D meshes
         if dims < 3
-            TDGL_Polycrystal.key_metadata(sim_grid,start_α,start_β,start_m⁻¹,start_σ,metadata)
+            TDGL_Polycrystal.key_metadata(sim_grid, start_α, start_β, start_m⁻¹, start_σ, metadata)
         else    
-            TDGL_Polycrystal.key_metadata(sim_grid,weights,metadata)
+            TDGL_Polycrystal.key_metadata(sim_grid, weights, metadata)
         end
-        data_group = create_group(fid,"data")
+        data_group = create_group(fid, "data")
         if save_states
             create_group(data_group, "save_state")
         end
@@ -72,7 +72,7 @@ function run_simulation(;uID,startB,stopB,stepB,
             finder,FindType,Ecrit,holdtime,init_hold,Jramp,J_initial,B,tol,levelcount,backend,rng_seed,ramp_mode)
         else
             apply_B_field!(finder,B)
-            finder.j *= 1.2 
+            finder.j *= 1.2
             finder.mode = JcInitHold()
         end
 
