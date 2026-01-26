@@ -141,9 +141,9 @@ function step!(finder::JcFinder{N,R}) where {N,R}
     parameters = sys.p
 
     jc_bcs!(finder,sys)
-    current_array = zeros(R,N)
+    current_array = zeros(R, N)
     current_array[1] = finder.j
-    applied_current = NTuple{N,R}(current_array)
+    applied_current = NTuple{N, R}(current_array)
 
     #call london multigrid
     step_data = MulTDGL.step!(finder.solver, finder.δda_rhs, applied_current) 

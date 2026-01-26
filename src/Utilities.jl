@@ -1,5 +1,3 @@
-
-
 "Used to rotate in 3D. Real number is angle in radians, imaginary 3Vec is axis of rotation"
 struct Quaternion
     re::Real
