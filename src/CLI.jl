@@ -34,8 +34,11 @@ end
 
 function save_state(finder::Finder,state_group)
     s = state(finder)
-    for (lbl,vals) in zip(["ψ","a","φ"],[s.ψ,s.a,s.φ])
-        state_group[lbl] = adapt(CPU(),data(vals))
+    for (lbl,vals) in zip(["ψ", "a", "φ"],[s.ψ, s.a, s.φ])
+        if haskey(state_group, lbl)
+            delete_object(state_group, lbl)
+        end
+        state_group[lbl] = adapt(CPU(), data(vals))
     end
 end
 

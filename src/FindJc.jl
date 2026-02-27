@@ -18,7 +18,7 @@ function decode_method(method::String)
     end
 end
 
-struct Ramp_Method{T<:RampMode,R}
+struct Ramp_Method{T<:RampMode, R}
     J_init::R
     J_relstep::R
     E_crit::R
@@ -49,7 +49,7 @@ function JcFinder(solver::ImplicitLondonMultigridSolver{N,R,VR,VC}, ecrit, inith
     δda_rhs = MulTDGL.similar(MulTDGL.state(solver).a)
     data(δda_rhs) .= zero(eltype(data(δda_rhs)))
 
-    ramp_method = Ramp_Method{decode_method(method),R}(R(jinit), R(jrelstep), R(ecrit), initholdtime, jholdtime)
+    ramp_method = Ramp_Method{decode_method(method), R}(R(jinit), R(jrelstep), R(ecrit), initholdtime, jholdtime)
 
     JcFinder(solver,
                mode,
@@ -106,16 +106,16 @@ function next_step!(finder,ramp::Ramp_Method{Linear_Increase, R},parameters) whe
 end
 
 function next_step!(finder,ramp::Ramp_Method{Exp_Decrease, R},parameters) where {R}
-    equilibrium_steps = 15 #minimum time to reach equilibrium after taking a current step
+    #wait for equilibrium after changing J
+    half_total_steps = round(Int,ramp.J_Hold_Time / (2 * parameters.k))
     
-    #start recording E field after a fraction of the hold time
-    if finder.curholdsteps > equilibrium_steps
+    #start recording E field after half the hold time
+    if finder.curholdsteps > half_total_steps
         finder.esum += finder.E_field
 
         #after full hold time, check average E field vs E crit
         if finder.curholdsteps >= ramp.J_Hold_Time / parameters.k
-            measure_steps = finder.curholdsteps - equilibrium_steps
-            if abs(finder.esum) > ramp.E_crit * measure_steps
+            if abs(finder.esum) > ramp.E_crit * half_total_steps
                 finder.j *= R(1 - ramp.J_relstep)
             else
                 finder.mode = JcDone()

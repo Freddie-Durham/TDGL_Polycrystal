@@ -69,9 +69,14 @@ function run_simulation(;uID, startB, stopB, stepB,
     for B in B_range
         if !continuous || B == B_range[1]
             finder = TDGL_Polycrystal.new_finder(
-            finder,FindType,Ecrit,holdtime,init_hold,Jramp,J_initial,B,tol,levelcount,backend,rng_seed,ramp_mode)
+            finder, FindType, Ecrit, holdtime, init_hold, Jramp, J_initial, B, tol, levelcount, backend, rng_seed, ramp_mode)
+            
+            if finder.ramp_method isa TDGL_Polycrystal.Ramp_Method{TDGL_Polycrystal.Exp_Decrease}
+                println("Ramping down current")
+                J_initial = max(J_initial * 0.8, Ecrit * 1.25) #should account for conductivity
+            end
         else
-            apply_B_field!(finder,B)
+            apply_B_field!(finder, B)
             finder.j *= 1.2
             finder.mode = JcInitHold()
         end
@@ -87,7 +92,7 @@ function run_simulation(;uID, startB, stopB, stepB,
 
             shot_metadata = Dict("Applied field" => B,"Time taken" => timetaken)
             data_group = create_group(campaign_group,"$(B)b data")
-            TDGL_Polycrystal.save_data(header,sim_data,data_group)
+            TDGL_Polycrystal.save_data(header, sim_data, data_group)
             for (key,val) in shot_metadata 
                 HDF5.attributes(data_group)[key] = val
             end
