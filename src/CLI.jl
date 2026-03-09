@@ -71,6 +71,11 @@ function parse_CL()
     s = ArgParseSettings()
 
     @add_arg_table! s begin
+        "--path"
+            help = "Specify path to store output files"
+            arg_type = String
+            default = "outputs/"
+
         "--uID"
             help = "Unique identifier, appended to data files to differentiate them"
             arg_type = String

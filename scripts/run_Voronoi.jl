@@ -1,7 +1,7 @@
 using TDGL_Polycrystal
 using HDF5
 
-function run_simulation(;uID, startB, stopB, stepB, 
+function run_simulation(;path, uID, startB, stopB, stepB, 
     pixels_per_xi, tstep, GL, levelcount, tol, conductivity, norm_resist, norm_mass, 
     ramp_mode, Ecrit, Jramp, J_initial, holdtime, init_hold, grain_size, thickness, 
     xmin, ymin, zmin, yperiodic, zperiodic, alphaN, betaN, init_alpha, init_beta, backend, 
@@ -37,7 +37,6 @@ function run_simulation(;uID, startB, stopB, stepB,
         J_initial, B_range[1], ramp_mode)
     end
 
-    path = "outputs/"
     name = "$(uID)/"
     mkpath(path*name)
 
