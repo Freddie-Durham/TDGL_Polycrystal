@@ -181,6 +181,7 @@ function find_jc(f_jc::JcFinder,verbose::Bool=true)
             println("Electric Field = $(f_jc.E_field)")
             println("Magnetic Field = $(f_jc.B_field)")
             println("Mode = "*string(f_jc.mode))
+            flush(stdout)
         else
             step!(f_jc)
         end
