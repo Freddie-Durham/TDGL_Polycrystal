@@ -144,10 +144,10 @@ const VOLUME_FRAC::Float32 = 1/(N^3)
 PRECISE::Vector{vec3} = [vec3(([i,j,k]/(N-1)).-0.5) for i in 0:N-1 for j in 0:N-1 for k in 0:N-1]
 
 "Use a more expensive stencil to estimate volume of pixel inside triangle"
-function precise_area(point,tri_data::TriangleData)::Float32
+function precise_area(point, tri_data::TriangleData)::Float32
     val = Float32(0.0)
     for vec in PRECISE
-        if inside_triangle(point.+vec,tri_data)
+        if inside_triangle(point .+ vec, tri_data)
             val += VOLUME_FRAC
         end
     end
@@ -155,15 +155,15 @@ function precise_area(point,tri_data::TriangleData)::Float32
 end
 
 "return a value between 0 and 1 based on volume of pixel inside triangle"
-function triangle_weight(point,tri_data::TriangleData)::Float32
+function triangle_weight(point, tri_data::TriangleData)::Float32
     val = Float32(0.0)
     @simd for off in OFFSETS
-        if inside_triangle(point.+off,tri_data)
+        if inside_triangle(point .+ off, tri_data)
             val += Float32(0.125)
         end
     end
     if val > 0.0 && val < 1.0
-        return precise_area(point,tri_data)
+        return precise_area(point, tri_data)
     else
         return val
     end
@@ -172,15 +172,15 @@ end
 "draw an anti-aliased triangular prism of a given thickness on a 3D mesh"
 function draw_slab!(mesh,a,b,c,thick = 1)
     dims = size(mesh)
-    maxes = ceil.(Int32,max.(max.(a,b),c) .+ thick)
-    mins = floor.(Int32,min.(min.(a,b),c) .- thick)
+    maxes = ceil.(Int32, max.(max.(a,b),c) .+ thick)
+    mins = floor.(Int32, min.(min.(a,b),c) .- thick)
 
-    lims = [clamp(mins[i],1,dims[i]):clamp(maxes[i],1,dims[i]) for i in 1:3]
-    boundingbox = CartesianIndices((lims[1],lims[2],lims[3]))
-    tri_data = TriangleData(a,b,c,thick)
+    lims = [clamp(mins[i], 1, dims[i]):clamp(maxes[i], 1, dims[i]) for i in 1:3]
+    boundingbox = CartesianIndices((lims[1], lims[2], lims[3]))
+    tri_data = TriangleData(a, b, c, thick)
     
     @inbounds for I in boundingbox
-        mesh[I] += triangle_weight(vec3(Tuple(I)),tri_data)
+        mesh[I] += triangle_weight(vec3(Tuple(I)), tri_data)
     end
 end
 

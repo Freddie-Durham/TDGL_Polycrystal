@@ -24,7 +24,7 @@ function run_simulation(;path, uID, startB, stopB, stepB,
     pattern = TDGL_Polycrystal.Voronoi(grain_size, thickness, voronoi_seed)
 
     if dims < 3
-        finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(
+        finder, metadata, start_α, start_β, start_m⁻¹, start_σ = simulation_setup(
         pixels_per_xi, pattern, tstep, GL, conductivity, norm_resist, norm_mass, Ecrit, Jramp,
         holdtime, init_hold, xmin, ymin, yperiodic,
         alphaN, betaN, init_alpha, init_beta, FindType, levelcount, tol, backend, rng_seed,

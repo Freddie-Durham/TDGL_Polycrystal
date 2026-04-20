@@ -14,39 +14,39 @@ function jc_bcs!(finder::Finder,sys::System)
         # field. instead, we can apply an external current in the
         # opposite direction so the desired current must flow in the
         # superconductor to compensate
-        println("Applying periodic boundary conditions")
+        #println("Applying periodic boundary conditions")
         asarray(finder.δda_rhs, 1) .= -finder.j * sys.m.h[1] / sys.p.κ^2
 
     elseif ndims == 3 && sys.m.periodic[1] && sys.m.periodic[2] && !sys.m.periodic[3]
-        println("Applying fixed boundary conditions on z boundary")
+        #println("Applying fixed boundary conditions on z boundary")
         db = -finder.j * sys.m.extent[3] * sys.m.h[3] / sys.p.κ^2
         asarray(finder.δda_rhs, 1)[:, :, 1] .= db * sys.m.h[1] / sys.m.h[3]
         asarray(finder.δda_rhs, 1)[:, :, end] .= db * sys.m.h[1] / sys.m.h[3]
     else
-        error("Boundary conditions not supported for periodicity = ", sys.m.periodic)
+        println("Boundary conditions not supported for periodicity = ", sys.m.periodic)
     end
 end
 
 "Sets gauge function to fix discontinuity in vector potential due to applied magnetic field in full periodic BCs using fluxon number"
 function set_fluxons!(c, dc, B, mesh)
     backend = KernelAbstractions.get_backend(data(c))
-    #flux = fluxoncount * 2π
-    #B field = flux / area
-    #assume B field always in z direction for now
+    # flux = fluxoncount * 2π
+    # B field = flux / area
+    # assume B field always in z direction for now
     flux = B * mesh.extent[1] * mesh.h[1] * mesh.extent[2] * mesh.h[2]
 
     fluxoncount = round(flux / 2π)
     #println("Fluxoncount = $(Int(fluxoncount))")
-    n = elemextent(mesh, (2,), 1) #number of y pointing edges in x direction
+    n = elemextent(mesh, (2,), 1) # number of y pointing edges in x direction
 
     if length(mesh.periodic) == 3 #for 3D periodic systems
-        #apply to y pointing edges at top y boundary for all x, z (fixed in z direction, periodic in x direction)
+        # apply to y pointing edges at top y boundary for all x, z (fixed in z direction, periodic in x direction)
         asarray(c, 2)[:, end, :] .= adapt(backend, 
         [fluxoncount * (i - 1) * 2π / n for i in 1:n,
         _ in 1:elemextent(mesh, (2,), 3)])
         asarray(dc, 1, 2)[:, end, :] .= fluxoncount * 2π / n
 
-    else #for 2D periodic systems
+    else # for 2D periodic systems
         asarray(c, 2)[:, end] .= adapt(backend, [fluxoncount * (i - 1) * 2π / n for i in 1:n])
         asarray(dc, 1, 2)[:, end] .= fluxoncount * 2π / n
     end
@@ -124,7 +124,7 @@ end
 "Returns a rectilinear mesh for a 2D system, accounting for requirements of multigrid"
 function get_mesh(pixels, xdim, ydim, yperiodic)
     # simulation mesh
-    extent = (xdim,ydim) .* pixels
+    extent = (xdim, ydim) .* pixels
     periodic = (true, yperiodic)
     h = (1.0/pixels, 1.0/pixels) # grid step
     return MulTDGL.RectMesh(extent, periodic, h)
@@ -140,72 +140,72 @@ function get_3D_mesh(type, pixels, xdim, ydim, zdim, yperiodic=true, zperiodic=t
 end
 
 "Setup material using Crystal2D according to Carty(2008)"
-function get_material(init_α,init_β,init_m⁻¹,init_σ,pixels,pattern,norm_resist,norm_mass,alphaN,betaN,m,backend)
+function get_material(init_α, init_β, init_m⁻¹, init_σ, pixels, pattern, norm_resist, norm_mass, alphaN, betaN, m, backend)
     #relative weights of nodes based on whether inside or outside grain boundaries
-    weights = apply_pattern(pattern,pixels,elemextent(m, ()))
+    weights = apply_pattern(pattern, pixels, elemextent(m, ()))
     #apply pattern to normalised α value
-    start_α = map(w->linear_interp(init_α,alphaN,w), weights)
+    start_α = map(w->linear_interp(init_α, alphaN, w), weights)
 
     #apply coating if non-periodic in y direction
     if m.periodic[1] && !m.periodic[2] && typeof(pattern) == TruncOct
-        thickness = Int(7.5*pixels)
-        start_α[:,1:thickness] .= alphaN
-        start_α[:,end-thickness:end] .= alphaN
+        thickness = Int(7.5 * pixels)
+        start_α[:, 1:thickness] .= alphaN
+        start_α[:, end-thickness:end] .= alphaN
     end
     α = RectPrimalForm0Data(m, adapt(backend, reshape(start_α, :)))
 
-    start_β = map(w->linear_interp(init_β,betaN,w), weights)
+    start_β = map(w->linear_interp(init_β, betaN, w), weights)
     β = RectPrimalForm0Data(m, adapt(backend, reshape(start_β, :)))
     
     #need two lots of conductivity for x and y 
-    start_σX = map(w->linear_interp(init_σ,1/norm_resist,w),interp_edgesX(weights,m.periodic[1]))
-    start_σY = map(w->linear_interp(init_σ,1/norm_resist,w),interp_edgesY(weights,m.periodic[2]))
-    σ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_σX, :),reshape(start_σY, :)))) 
+    start_σX = map(w->linear_interp(init_σ, 1/norm_resist, w), interp_edgesX(weights, m.periodic[1]))
+    start_σY = map(w->linear_interp(init_σ, 1/norm_resist, w), interp_edgesY(weights, m.periodic[2]))
+    σ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_σX, :), reshape(start_σY, :)))) 
 
     #same goes for reciprocal mass
-    start_m⁻¹X = map(w->linear_interp(init_m⁻¹,1/norm_mass,w),interp_edgesX(weights,m.periodic[1]))
-    start_m⁻¹Y = map(w->linear_interp(init_m⁻¹,1/norm_mass,w),interp_edgesY(weights,m.periodic[2]))
-    m⁻¹ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_m⁻¹X, :),reshape(start_m⁻¹Y, :)))) 
+    start_m⁻¹X = map(w->linear_interp(init_m⁻¹, 1/norm_mass, w), interp_edgesX(weights, m.periodic[1]))
+    start_m⁻¹Y = map(w->linear_interp(init_m⁻¹, 1/norm_mass, w), interp_edgesY(weights, m.periodic[2]))
+    m⁻¹ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_m⁻¹X, :), reshape(start_m⁻¹Y, :)))) 
 
-    return MulTDGL.Material(α, β, m⁻¹, σ),start_α,start_β,start_m⁻¹X,start_σY
+    return MulTDGL.Material(α, β, m⁻¹, σ), start_α, start_β, start_m⁻¹X, start_σY
 end
 
 "Setup material using Voronoi according to Blair(2022)"
-function get_3D_material(init_α,init_β,init_m⁻¹,init_σ,pixels,pattern,norm_resist,norm_mass,alphaN,betaN,m::RectMesh{N,R},backend) where {N,R}
+function get_3D_material(init_α, init_β, init_m⁻¹, init_σ, pixels, pattern, norm_resist, norm_mass, alphaN, betaN, m::RectMesh{N,R}, backend) where {N,R}
     #relative weights of nodes based on whether inside or outside grain boundaries
-    weights = apply_3D_pattern(pattern,pixels,elemextent(m, ()))
+    weights = apply_3D_pattern(pattern, pixels, elemextent(m, ()))
 
     #apply pattern to normalised α value
-    start_α = map(w -> R(linear_interp(init_α,alphaN,w)), weights)
+    start_α = map(w -> R(linear_interp(init_α, alphaN, w)), weights)
     α = RectPrimalForm0Data(m, adapt(backend, reshape(start_α, :)))
 
-    start_β = map(w -> R(linear_interp(init_β,betaN,w)), weights)
+    start_β = map(w -> R(linear_interp(init_β, betaN, w)), weights)
     β = RectPrimalForm0Data(m, adapt(backend, reshape(start_β, :)))
 
-    weights_x, weights_y, weights_z = interpolate_edges(weights,m.periodic)
+    weights_x, weights_y, weights_z = interpolate_edges(weights, m.periodic)
 
     σ = RectPrimalForm1Data(m, adapt(backend, vcat(
-        reshape(map(w -> R(linear_interp(init_σ,1/norm_resist,w)), weights_x),:),
-        reshape(map(w -> R(linear_interp(init_σ,1/norm_resist,w)), weights_y),:),
-        reshape(map(w -> R(linear_interp(init_σ,1/norm_resist,w)), weights_z),:)
+        reshape(map(w -> R(linear_interp(init_σ, 1/norm_resist, w)), weights_x), :),
+        reshape(map(w -> R(linear_interp(init_σ, 1/norm_resist, w)), weights_y), :),
+        reshape(map(w -> R(linear_interp(init_σ, 1/norm_resist, w)), weights_z), :)
     )))
 
     m⁻¹ = RectPrimalForm1Data(m, adapt(backend, vcat(
-        reshape(map(w -> R(linear_interp(init_m⁻¹,1/norm_mass,w)), weights_x),:),
-        reshape(map(w -> R(linear_interp(init_m⁻¹,1/norm_mass,w)), weights_y),:),
-        reshape(map(w -> R(linear_interp(init_m⁻¹,1/norm_mass,w)), weights_z),:)
+        reshape(map(w -> R(linear_interp(init_m⁻¹, 1/norm_mass, w)), weights_x), :),
+        reshape(map(w -> R(linear_interp(init_m⁻¹, 1/norm_mass, w)), weights_y), :),
+        reshape(map(w -> R(linear_interp(init_m⁻¹, 1/norm_mass, w)), weights_z), :)
     )))
 
     return MulTDGL.Material(α, β, m⁻¹, σ), weights
 end
 
 "Set up parameters of simulation using CUDA"
-function simulation_setup(vortex_radius,pattern,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,yperiodic,alphaN,betaN,init_alpha,init_beta,finder,levelcount,tol,bknd,rng_seed,J_init,B_init,args...)
+function simulation_setup(vortex_radius, pattern, tstep, GL, init_σ, norm_resist, norm_mass, Ecrit, Jramp, wait_time, init_hold_time, xdim, ydim, yperiodic, alphaN, betaN, init_alpha, init_beta, finder, levelcount, tol, bknd, rng_seed, J_init, B_init, args...)
     backend = get_backend(bknd)
 
     #get parameters + material, setup the SC system. Create initial state of system and initialise solver. Return solver along with BCs
-    params = get_params(tstep,GL)
-    mesh = get_mesh(vortex_radius,xdim,ydim,yperiodic)
+    params = get_params(tstep, GL)
+    mesh = get_mesh(vortex_radius, xdim, ydim, yperiodic)
 
     # number of elements of given degree
     n0 = elemcount(mesh, Val(0)) # number of vertices
@@ -213,16 +213,16 @@ function simulation_setup(vortex_radius,pattern,tstep,GL,init_σ,norm_resist,nor
     n2 = elemcount(mesh, Val(2)) # number of faces
 
     init_m⁻¹ = 1.0
-    material,start_α,start_β,start_m⁻¹X,start_σY = get_material(
-        init_alpha,init_beta,init_m⁻¹,init_σ,vortex_radius,pattern,norm_resist,norm_mass,alphaN,betaN,mesh,backend)
+    material, start_α, start_β, start_m⁻¹X, start_σY = get_material(
+        init_alpha, init_beta, init_m⁻¹, init_σ, vortex_radius, pattern, norm_resist, norm_mass, alphaN, betaN, mesh, backend)
     
-    system = jc_system(n1,n2,mesh,params,material,backend,B_init)
-    state = get_state(n0,n1,mesh,backend,rng_seed)
+    system = jc_system(n1, n2, mesh, params, material, backend, B_init)
+    state = get_state(n0, n1, mesh, backend, rng_seed)
 
     # create simulation
     s = MulTDGL.ImplicitLondonMultigridSolver(system, state, tol, levelcount)
 
-    f_jc = finder(s,Ecrit,init_hold_time,wait_time,J_init,Jramp,B_init,args...)
+    f_jc = finder(s, Ecrit, init_hold_time, wait_time, J_init, Jramp, B_init, args...)
 
     metadata = Dict("Timestep" => tstep, "κ" => GL, "xMesh" => mesh.extent[1],
     "yMesh" => mesh.extent[2], "Vortex radius (pixels)" => vortex_radius, "xPeriodic" => string(mesh.periodic[1]),
@@ -239,7 +239,7 @@ function simulation_setup(vortex_radius,pattern,tstep,GL,init_σ,norm_resist,nor
 end
 
 "Set up parameters of simulation using CUDA"
-function simulation_setup_3D(vortex_radius,pattern,tstep,GL,init_σ,norm_resist,norm_mass,Ecrit,Jramp,wait_time,init_hold_time,xdim,ydim,zdim,yperiodic,zperiodic,alphaN,betaN,init_alpha,init_beta,finder,levelcount,tol,bknd,rng_seed,J_init,B_init,args...;
+function simulation_setup_3D(vortex_radius, pattern, tstep, GL, init_σ, norm_resist, norm_mass, Ecrit, Jramp, wait_time, init_hold_time, xdim, ydim, zdim, yperiodic, zperiodic, alphaN, betaN, init_alpha, init_beta, finder, levelcount, tol, bknd, rng_seed, J_init, B_init, args...;
     storage_type = Float64)
 
     backend = get_backend(bknd)
@@ -252,7 +252,7 @@ function simulation_setup_3D(vortex_radius,pattern,tstep,GL,init_σ,norm_resist,
     n2 = elemcount(mesh, Val(2)) # number of faces
 
     init_m⁻¹ = 1.0
-    material,weights = get_3D_material(
+    material, weights = get_3D_material(
     init_alpha, init_beta, init_m⁻¹, init_σ, vortex_radius, pattern,
     norm_resist, norm_mass, alphaN, betaN, mesh, backend)
 
@@ -278,20 +278,20 @@ function simulation_setup_3D(vortex_radius,pattern,tstep,GL,init_σ,norm_resist,
 end
 
 "set the B field of the system in the solver and reset the solver state"
-function new_solver(solver::ImplicitLondonMultigridSolver{N,R,VR,VC},B_field,tol,levelcount,backend,rng) where {N,R,VR,VC}
+function new_solver(solver::ImplicitLondonMultigridSolver{N,R,VR,VC}, B_field, tol, levelcount, backend, rng) where {N,R,VR,VC}
     old_sys = MulTDGL.system(solver)
     mesh = old_sys.m
     n0 = elemcount(mesh, Val(0)) # number of vertices
     n1 = elemcount(mesh, Val(1)) # number of edges
     n2 = elemcount(mesh, Val(2)) # number of faces
-    state = get_state(n0,n1,mesh,backend,rng)
-    system = jc_system(n1,n2,mesh,old_sys.p,old_sys.mat,backend,B_field)
+    state = get_state(n0, n1, mesh, backend, rng)
+    system = jc_system(n1, n2, mesh, old_sys.p, old_sys.mat,backend, B_field)
     return MulTDGL.ImplicitLondonMultigridSolver(system, state, R(tol), levelcount)
 end
 
 "Create a new finder for a new B field and applied current density"
-function new_finder(F::Finder,findtype,Ecrit,wait_time,init_hold_time,Jramp,J_init,B_field,tol,levelcount,backend,rng,args...)
-    s = new_solver(F.solver,B_field,tol,levelcount,get_backend(backend),rng)
-    return findtype(s,Ecrit,init_hold_time,wait_time,J_init,Jramp,B_field,args...)
+function new_finder(F::Finder, findtype, Ecrit, wait_time, init_hold_time, Jramp, J_init, B_field, tol, levelcount, backend, rng, args...)
+    s = new_solver(F.solver, B_field, tol, levelcount, get_backend(backend), rng)
+    return findtype(s,Ecrit, init_hold_time, wait_time, J_init, Jramp, B_field, args...)
 end
 

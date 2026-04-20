@@ -1,4 +1,4 @@
-const corners = [[-0.5,0.5],[0.5,0.5],[0.5,-0.5],[-0.5,-0.5]]
+const corners = [[-0.5, 0.5], [0.5, 0.5], [0.5, -0.5], [-0.5, -0.5]]
 
 #grain size and GB thickness in coherence lengths
 struct TruncOct 
@@ -10,9 +10,9 @@ struct TruncOct
     shape::Any
 end
 
-function TruncOct(N::Integer,xmin::Integer,rep_grain::Integer,grain_thick::Float64,factor::Integer)
-    grainangle,grain_diameter = periodic_crystal(N,fld(xmin,rep_grain))
-    return TruncOct(grain_diameter,grain_thick,rep_grain,grainangle,factor,octagon!)
+function TruncOct(N::Integer, xmin::Integer, rep_grain::Integer, grain_thick::Float64, factor::Integer)
+    grainangle, grain_diameter = periodic_crystal(N,fld(xmin, rep_grain))
+    return TruncOct(grain_diameter, grain_thick, rep_grain, grainangle, factor, octagon!)
 end
 
 function append_metadata!(metadata::Dict,pattern::TruncOct)
@@ -292,11 +292,11 @@ function apply_pattern(voronoi::Voronoi,pixels,veclen)
 end
 
 "Apply josephson junction pattern to a grid"
-function apply_pattern(JJ::JosephsonJunction,pixels,veclen)
+function apply_pattern(JJ::JosephsonJunction, pixels, veclen)
     init_grid = zeros(Float64,veclen)
 
-    half_x = floor(Int64,veclen[1]/2)
-    junc_thick_xi = floor(Int64,JJ.junc_thick*pixels/2)
+    half_x = floor(Int64, veclen[1]/2)
+    junc_thick_xi = floor(Int64, JJ.junc_thick*pixels/2)
     init_grid[half_x-junc_thick_xi:half_x+junc_thick_xi,end - floor(Int64,veclen[2]/3):end] .= 1.0
     init_grid[half_x-junc_thick_xi:half_x+junc_thick_xi,1:floor(Int64,veclen[2]/3)] .= 1.0
     return init_grid
