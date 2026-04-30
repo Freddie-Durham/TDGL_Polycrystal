@@ -100,7 +100,7 @@ end
 "Returns a state for a system"
 function get_state(n0,n1,m::RectMesh{N,R},backend,seed) where {N,R}
     # initial state
-    ψdata = Adapt.adapt(backend, exp.(Complex{R}(2π *im) .* rand(Xoshiro(seed), R, n0)))
+    ψdata = Adapt.adapt(backend, exp.(Complex{R}(2π * im) .* rand(Xoshiro(seed), R, n0)))
     ψ = RectPrimalForm0Data(m, ψdata)        # wavefunction with random phase (same every time function is called)
     a = RectPrimalForm1Data(m, KernelAbstractions.zeros(backend, R, n1))
     φ = RectPrimalForm0Data(m, KernelAbstractions.zeros(backend, R, n0))
@@ -235,7 +235,7 @@ function simulation_setup(vortex_radius, pattern, tstep, GL, init_σ, norm_resis
     
     append_metadata!(metadata,pattern)
 
-    return f_jc,metadata,start_α,start_β,start_m⁻¹X,start_σY
+    return f_jc, metadata, start_α, start_β, start_m⁻¹X, start_σY
 end
 
 "Set up parameters of simulation using CUDA"

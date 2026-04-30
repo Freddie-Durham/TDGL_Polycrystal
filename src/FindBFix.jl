@@ -54,7 +54,7 @@ function step!(finder::Bfixed)
     jc_bcs!(finder,sys)
 
     #call london multigrid
-    step_data = MulTDGL.step!(finder.solver, finder.δda_rhs, (finder.j,0.0)) 
+    step_data = MulTDGL.step!(finder.solver, finder.δda_rhs, (finder.j, 0.0)) 
     
     finder.E_field = step_data.e[1]
 
