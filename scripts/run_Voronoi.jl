@@ -5,7 +5,7 @@ function run_simulation(;path, uID, startB, stopB, stepB,
     pixels_per_xi, tstep, GL, levelcount, tol, conductivity, norm_resist, norm_mass, 
     ramp_mode, Ecrit, Jramp, J_initial, holdtime, init_hold, grain_size, thickness, 
     xmin, ymin, zmin, yperiodic, zperiodic, alphaN, betaN, init_alpha, init_beta, backend, 
-    rng_seed, voronoi_seed, dims, save_states, continuous, kwargs...)
+    rng_seed, voronoi_seed, dims, save_states, save_frequency, continuous, kwargs...)
     init_time = time()
 
     stopB = startB + stopB
@@ -81,27 +81,24 @@ function run_simulation(;path, uID, startB, stopB, stepB,
         end
 
         println("Running simulation with B = $(B)")
-        sim_data, timetaken = find_jc(finder)
+        sim_data, timetaken = find_jc(finder, filepath=filepath, save_states=save_states, save_frequency=save_frequency)
 
-        h5open(filepath,"r+") do fid
+        h5open(filepath, "r+") do fid
             campaign_group = fid["data"]
-            if save_states #save latest state of simulation after each B field
-                TDGL_Polycrystal.save_state(finder,campaign_group["save_state"])
-            end
 
-            shot_metadata = Dict("Applied field" => B,"Time taken" => timetaken)
-            data_group = create_group(campaign_group,"$(B)b data")
+            shot_metadata = Dict("Applied field" => B, "Time taken" => timetaken)
+            data_group = create_group(campaign_group, "$(B)b data")
             TDGL_Polycrystal.save_data(header, sim_data, data_group)
-            for (key,val) in shot_metadata 
+            for (key, val) in shot_metadata 
                 HDF5.attributes(data_group)[key] = val
             end
         end
-    end 
+    end
 
     h5open(filepath,"r+") do fid
-        HDF5.attributes(fid["grid"])["WallTime"] = time()-init_time
+        HDF5.attributes(fid["grid"])["WallTime"] = time() - init_time
         if save_states #remove save_state group to save space
-            delete_object(fid,"data/save_state") 
+            delete_object(fid, "data/save_state") 
         end
     end
     

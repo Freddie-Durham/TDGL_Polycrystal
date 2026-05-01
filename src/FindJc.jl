@@ -162,14 +162,16 @@ function step!(finder::JcFinder{N,R}) where {N,R}
 end
 
 "Run stepping code and record electric field, current and time taken"
-function find_jc(f_jc::JcFinder,verbose::Bool=true)
+function find_jc(f_jc::JcFinder, verbose::Bool=true; filepath="", save_states=false, save_frequency=10_000)
     current = Vector{Float64}([])
     b_field = Vector{Float64}([])
     e_field = Vector{Float64}([])
     mode = Vector{String}([])
 
     starttime = time()
+    count = 0
     while f_jc.mode != JcDone()
+        count += 1
         push!(b_field,f_jc.B_field)
         push!(mode,string(f_jc.mode))
         push!(current,f_jc.j)
@@ -185,8 +187,18 @@ function find_jc(f_jc::JcFinder,verbose::Bool=true)
         else
             step!(f_jc)
         end
+
+        if save_states && (count % save_frequency == 0)
+            if verbose
+                println("Saving state at step $count")
+            end
+            h5open(filepath, "r+") do fid
+                campaign_group = fid["data"]
+                TDGL_Polycrystal.save_state(f_jc, campaign_group["save_state"])
+            end
+        end
     end
     timetaken = time()-starttime
 
-    return [current,e_field,b_field,mode], timetaken
+    return [current, e_field, b_field, mode], timetaken
 end

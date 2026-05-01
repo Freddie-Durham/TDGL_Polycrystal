@@ -32,9 +32,9 @@ function save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_�
     end
 end
 
-function save_state(finder::Finder,state_group)
+function save_state(finder::Finder, state_group)
     s = state(finder)
-    for (lbl,vals) in zip(["ψ", "a", "φ"],[s.ψ, s.a, s.φ])
+    for (lbl, vals) in zip(["ψ", "a", "φ"], [s.ψ, s.a, s.φ])
         if haskey(state_group, lbl)
             delete_object(state_group, lbl)
         end
@@ -285,6 +285,11 @@ function parse_CL()
             help = "Boolean value determining whether to save the simulation state after each B field step"
             arg_type = Bool
             default = false
+
+        "--save_frequency"
+            help = "Number of time-steps between each saved state, only relevant if --save_states is true"
+            arg_type = Int64
+            default = 10_000
 
         "--continuous"
             help = "Boolean value determining whether to continue from the state reached at the previous B field or start anew"
