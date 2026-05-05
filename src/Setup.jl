@@ -29,7 +29,7 @@ end
 
 "Sets gauge function to fix discontinuity in vector potential due to applied magnetic field in full periodic BCs using fluxon number"
 function set_fluxons!(c, dc, B, mesh)
-    backend = KernelAbstractions.get_backend(data(c))
+    backend = MulTDGL_backend(c)
     # flux = fluxoncount * 2π
     # B field = flux / area
     # assume B field always in z direction for now
@@ -109,7 +109,7 @@ function get_state(n0,n1,m::RectMesh{N,R},backend,seed) where {N,R}
 end
 
 "Convert string to type of backend"
-function get_backend(bknd)
+function interpret_backend(bknd)
     if uppercase(bknd) == "CUDA"
         return CUDABackend() # for NVIDIA GPUs
     elseif uppercase(bknd) == "AMDGPU"
@@ -201,7 +201,7 @@ end
 
 "Set up parameters of simulation using CUDA"
 function simulation_setup(vortex_radius, pattern, tstep, GL, init_σ, norm_resist, norm_mass, Ecrit, Jramp, wait_time, init_hold_time, xdim, ydim, yperiodic, alphaN, betaN, init_alpha, init_beta, finder, levelcount, tol, bknd, rng_seed, J_init, B_init, args...)
-    backend = get_backend(bknd)
+    backend = interpret_backend(bknd)
 
     #get parameters + material, setup the SC system. Create initial state of system and initialise solver. Return solver along with BCs
     params = get_params(tstep, GL)
@@ -242,7 +242,7 @@ end
 function simulation_setup_3D(vortex_radius, pattern, tstep, GL, init_σ, norm_resist, norm_mass, Ecrit, Jramp, wait_time, init_hold_time, xdim, ydim, zdim, yperiodic, zperiodic, alphaN, betaN, init_alpha, init_beta, finder, levelcount, tol, bknd, rng_seed, J_init, B_init, args...;
     storage_type = Float64)
 
-    backend = get_backend(bknd)
+    backend = interpret_backend(bknd)
     params = get_params(storage_type(tstep), storage_type(GL))
     mesh = get_3D_mesh(storage_type, vortex_radius, xdim, ydim, zdim, yperiodic, zperiodic)
 
@@ -291,7 +291,7 @@ end
 
 "Create a new finder for a new B field and applied current density"
 function new_finder(F::Finder, findtype, Ecrit, wait_time, init_hold_time, Jramp, J_init, B_field, tol, levelcount, backend, rng, args...)
-    s = new_solver(F.solver, B_field, tol, levelcount, get_backend(backend), rng)
-    return findtype(s,Ecrit, init_hold_time, wait_time, J_init, Jramp, B_field, args...)
+    s = new_solver(F.solver, B_field, tol, levelcount, interpret_backend(backend), rng)
+    return findtype(s, Ecrit, init_hold_time, wait_time, J_init, Jramp, B_field, args...)
 end
 

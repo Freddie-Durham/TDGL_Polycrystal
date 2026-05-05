@@ -156,3 +156,5 @@ function make_path(path::AbstractString)
         error("Path $(path) already exists. Please choose a different path.")
     end
 end
+
+MulTDGL_backend(d::MulTDGL.AbstractForm) = KernelAbstractions.get_backend(data(d))

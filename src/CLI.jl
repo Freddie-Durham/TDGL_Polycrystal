@@ -32,13 +32,38 @@ function save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_�
     end
 end
 
-function save_state(finder::Finder, state_group)
+function save_state(finder::Finder, state_group, current)
     s = state(finder)
     for (lbl, vals) in zip(["ψ", "a", "φ"], [s.ψ, s.a, s.φ])
         if haskey(state_group, lbl)
             delete_object(state_group, lbl)
         end
         state_group[lbl] = adapt(CPU(), data(vals))
+    end
+
+    if haskey(HDF5.attributes(state_group), "Current")
+        delete!(attrs(state_group), "Current")
+    end
+    HDF5.attributes(state_group)["Current"] = current
+end
+
+"loads raw data from HDF5 file into the state of the finder"
+function load_state!(finder::Finder, state_group)
+    s = state(finder)
+    backend = MulTDGL_backend(s.ψ)
+    for lbl in ["ψ", "a", "φ"]
+        if haskey(state_group, lbl)
+            target = getproperty(s, Symbol(lbl))
+            data_array = read(state_group[lbl])
+
+            data(target) .= adapt(backend, data_array)
+        else
+            error("State group does not contain $lbl")
+        end
+    end
+
+    if haskey(HDF5.attributes(state_group), "Current")
+        finder.j = HDF5.read_attribute(state_group, "Current")
     end
 end
 
@@ -50,11 +75,11 @@ function save_data(header,sim_data,data_group)
 end
 
 "save results of simulation and time taken to same HDF5 file"
-function save_simdata(path,name,sim_data,header,walltime)
+function save_simdata(path, name, sim_data, header, walltime)
     filepath = "$(path)$(name).h5"
     h5open(filepath,"cw") do fid
         data_group = create_group(fid,"data")
-        save_data(header,sim_data,data_group)
+        save_data(header, sim_data, data_group)
         sim_grid = fid["grid"]
         HDF5.attributes(sim_grid)["Wall Time"] = walltime
     end
@@ -290,6 +315,11 @@ function parse_CL()
             help = "Number of time-steps between each saved state, only relevant if --save_states is true"
             arg_type = Int64
             default = 10_000
+
+        "--resume_states"
+            help = "Boolean value determining whether to resume from the last saved state or start anew"
+            arg_type = Bool
+            default = false
 
         "--continuous"
             help = "Boolean value determining whether to continue from the state reached at the previous B field or start anew"

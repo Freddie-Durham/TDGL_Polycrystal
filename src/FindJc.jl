@@ -172,10 +172,10 @@ function find_jc(f_jc::JcFinder, verbose::Bool=true; filepath="", save_states=fa
     count = 0
     while f_jc.mode != JcDone()
         count += 1
-        push!(b_field,f_jc.B_field)
-        push!(mode,string(f_jc.mode))
-        push!(current,f_jc.j)
-        push!(e_field,f_jc.E_field)
+        push!(b_field, f_jc.B_field)
+        push!(mode, string(f_jc.mode))
+        push!(current, f_jc.j)
+        push!(e_field, f_jc.E_field)
         if verbose
             @time step!(f_jc)
             println("Time taken = $(time()-starttime)")
@@ -194,11 +194,10 @@ function find_jc(f_jc::JcFinder, verbose::Bool=true; filepath="", save_states=fa
             end
             h5open(filepath, "r+") do fid
                 campaign_group = fid["data"]
-                TDGL_Polycrystal.save_state(f_jc, campaign_group["save_state"])
+                TDGL_Polycrystal.save_state(f_jc, campaign_group["save_state"], f_jc.j)
             end
         end
     end
     timetaken = time()-starttime
-
     return [current, e_field, b_field, mode], timetaken
 end

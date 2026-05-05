@@ -5,7 +5,7 @@ function run_simulation(;path, uID, startB, stopB, stepB,
     pixels_per_xi, tstep, GL, levelcount, tol, conductivity, norm_resist, norm_mass, 
     ramp_mode, Ecrit, Jramp, J_initial, holdtime, init_hold, grain_size, thickness, 
     xmin, ymin, zmin, yperiodic, zperiodic, alphaN, betaN, init_alpha, init_beta, backend, 
-    rng_seed, voronoi_seed, dims, save_states, save_frequency, continuous, kwargs...)
+    rng_seed, voronoi_seed, dims, save_states, save_frequency, resume_states, continuous, kwargs...)
     init_time = time()
 
     stopB = startB + stopB
@@ -48,18 +48,20 @@ function run_simulation(;path, uID, startB, stopB, stepB,
 
     filepath = "$(path)$(name)$(campaign).h5"
     header = ["Current", "Electric Field"]
-    h5open(filepath, "w") do fid
-        sim_grid = create_group(fid,"grid")
+    if !isfile(filepath)
+        h5open(filepath, "w") do fid
+            sim_grid = create_group(fid,"grid")
 
-        #weights is either a single 3D mesh or a tuple of 2D meshes
-        if dims < 3
-            TDGL_Polycrystal.key_metadata(sim_grid, start_α, start_β, start_m⁻¹, start_σ, metadata)
-        else    
-            TDGL_Polycrystal.key_metadata(sim_grid, weights, metadata)
-        end
-        data_group = create_group(fid, "data")
-        if save_states
-            create_group(data_group, "save_state")
+            #weights is either a single 3D mesh or a tuple of 2D meshes
+            if dims < 3
+                TDGL_Polycrystal.key_metadata(sim_grid, start_α, start_β, start_m⁻¹, start_σ, metadata)
+            else    
+                TDGL_Polycrystal.key_metadata(sim_grid, weights, metadata)
+            end
+            data_group = create_group(fid, "data")
+            if save_states
+                create_group(data_group, "save_state")
+            end
         end
     end
     println("Setup Complete")
@@ -78,6 +80,24 @@ function run_simulation(;path, uID, startB, stopB, stepB,
             apply_B_field!(finder, B)
             finder.j *= 1.2
             finder.mode = JcInitHold()
+        end
+
+        if resume_states
+            h5open(filepath, "r") do fid
+                success = false
+                campaign_group = fid["data"]
+                if haskey(campaign_group, "save_state")
+                    state_group = campaign_group["save_state"]
+                    if haskey(state_group, "ψ")
+                        success = true
+                        println("Resuming from saved state for B = $(B)")
+                        TDGL_Polycrystal.load_state!(finder, state_group)
+                    end
+                end
+                if !success
+                    println("Failed to load state for B = $(B), starting new simulation")
+                end
+            end
         end
 
         println("Running simulation with B = $(B)")
