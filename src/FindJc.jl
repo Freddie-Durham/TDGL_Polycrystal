@@ -6,13 +6,20 @@ struct Exp_Increase <: RampMode end
 struct Exp_Decrease <: RampMode end
 struct Linear_Increase <: RampMode end
 
-function decode_method(method::String)
+struct Ramp_B <: RampMode
+    B_final::Float64
+    B_ramp::Float64
+end
+
+function decode_method(method::String, B)
     if uppercase(method) == "EXP_INCREASE"
         return Exp_Increase
     elseif uppercase(method) == "EXP_DECREASE"
         return Exp_Decrease
     elseif uppercase(method) == "LIN_INCREASE"
         return Linear_Increase
+    elseif uppercase(method) == "RAMP_B"
+        return Ramp_B(B, 1e-3)
     else
         error("Unknown ramp method: $method")
     end
@@ -24,10 +31,11 @@ struct Ramp_Method{T<:RampMode, R}
     E_crit::R
     Init_Hold_Time::Int64
     J_Hold_Time::Int64
+    mode::T
 end
 
 "wrapper around the london multigrid solver for determining the critical current density"
-mutable struct JcFinder{N,R,VR,VC,T} <: Finder
+mutable struct JcFinder{N, R, VR, VC, T} <: Finder
     solver::ImplicitLondonMultigridSolver{N,R,RectPrimalForm0Data{N,R,VR},RectPrimalForm1Data{N,R,VR},RectPrimalForm0Data{N,Complex{R},VC},RectPrimalForm1Data{N,Complex{R},VC}}
     mode::JcMode
     curholdsteps::Int64
@@ -49,7 +57,10 @@ function JcFinder(solver::ImplicitLondonMultigridSolver{N,R,VR,VC}, ecrit, inith
     δda_rhs = MulTDGL.similar(MulTDGL.state(solver).a)
     data(δda_rhs) .= zero(eltype(data(δda_rhs)))
 
-    ramp_method = Ramp_Method{decode_method(method), R}(R(jinit), R(jrelstep), R(ecrit), initholdtime, jholdtime)
+    method = decode_method(method, b_field)
+    ramp_method = Ramp_Method(R(jinit), R(jrelstep), R(ecrit), initholdtime, jholdtime, method)
+
+    B_field = method isa Ramp_B ? zero(R) : R(b_field)
 
     JcFinder(solver,
                mode,
@@ -59,7 +70,7 @@ function JcFinder(solver::ImplicitLondonMultigridSolver{N,R,VR,VC}, ecrit, inith
                e_field,
                esum,
                δda_rhs,
-               R(b_field),
+               B_field,
                solver.state_u[1])
 end
 
@@ -85,7 +96,22 @@ function E_field_avg(s::ImplicitLondonMultigridSolver,a_prev,frac=0)
     return (-dAdt_avg -∇ϕ_avg) * δh / measure(m)
 end
 
-function next_step!(finder,ramp::Ramp_Method{Exp_Increase, R},parameters) where {R}
+function next_step!(finder, ramp::Ramp_Method{Ramp_B, R}, parameters) where {R}
+    if finder.B_field < ramp.mode.B_final
+        finder.B_field += ramp.mode.B_ramp
+        apply_B_field!(finder, finder.B_field)
+    else
+        if finder.E_field < ramp.E_crit
+            finder.curholdsteps = 0
+            finder.j *= R(1 + ramp.J_relstep)
+        elseif finder.curholdsteps >= ramp.J_Hold_Time / parameters.k
+            finder.curholdsteps = 0
+            finder.mode = JcDone()
+        end
+    end
+end
+
+function next_step!(finder, ramp::Ramp_Method{Exp_Increase, R}, parameters) where {R}
     if finder.E_field < ramp.E_crit
         finder.curholdsteps = 0
         finder.j *= R(1 + ramp.J_relstep)
@@ -136,7 +162,7 @@ function calculate_E!(finder::JcFinder,step_data)
 end
 
 "Run simulation for a given B field. Ramp from J_init until E crit is exceeded"
-function step!(finder::JcFinder{N,R}) where {N,R}
+function step!(finder::JcFinder{N, R}) where {N, R}
     sys = system(finder)
     parameters = sys.p
 
