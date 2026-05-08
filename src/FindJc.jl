@@ -13,11 +13,11 @@ end
 
 function decode_method(method::String, B)
     if uppercase(method) == "EXP_INCREASE"
-        return Exp_Increase
+        return Exp_Increase()
     elseif uppercase(method) == "EXP_DECREASE"
-        return Exp_Decrease
+        return Exp_Decrease()
     elseif uppercase(method) == "LIN_INCREASE"
-        return Linear_Increase
+        return Linear_Increase()
     elseif uppercase(method) == "RAMP_B"
         return Ramp_B(B, 1e-3)
     else
@@ -121,7 +121,7 @@ function next_step!(finder, ramp::Ramp_Method{Exp_Increase, R}, parameters) wher
     end
 end
 
-function next_step!(finder,ramp::Ramp_Method{Linear_Increase, R},parameters) where {R}
+function next_step!(finder, ramp::Ramp_Method{Linear_Increase, R}, parameters) where {R}
     if finder.E_field < ramp.E_crit
         finder.curholdsteps = 0
         finder.j += ramp.J_relstep
@@ -131,7 +131,7 @@ function next_step!(finder,ramp::Ramp_Method{Linear_Increase, R},parameters) whe
     end
 end
 
-function next_step!(finder,ramp::Ramp_Method{Exp_Decrease, R},parameters) where {R}
+function next_step!(finder, ramp::Ramp_Method{Exp_Decrease, R}, parameters) where {R}
     #wait for equilibrium after changing J
     half_total_steps = round(Int,ramp.J_Hold_Time / (2 * parameters.k))
     
@@ -183,7 +183,7 @@ function step!(finder::JcFinder{N, R}) where {N, R}
             finder.mode = JcJHold()
         end
     elseif finder.mode == JcJHold()
-       next_step!(finder,finder.ramp_method,parameters)
+       next_step!(finder, finder.ramp_method, parameters)
     end
 end
 
