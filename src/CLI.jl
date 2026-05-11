@@ -32,7 +32,7 @@ function save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_�
     end
 end
 
-function save_state(finder::Finder, state_group, current)
+function save_state(finder::Finder, state_group, current, B)
     s = state(finder)
     for (lbl, vals) in zip(["ψ", "a", "φ"], [s.ψ, s.a, s.φ])
         if haskey(state_group, lbl)
@@ -45,6 +45,11 @@ function save_state(finder::Finder, state_group, current)
         delete!(attrs(state_group), "Current")
     end
     HDF5.attributes(state_group)["Current"] = current
+
+    if haskey(HDF5.attributes(state_group), "Magnetic Field")
+        delete!(attrs(state_group), "Magnetic Field")
+    end
+    HDF5.attributes(state_group)["Magnetic Field"] = B
 end
 
 "loads raw data from HDF5 file into the state of the finder"
@@ -65,12 +70,24 @@ function load_state!(finder::Finder, state_group)
     if haskey(HDF5.attributes(state_group), "Current")
         finder.j = HDF5.read_attribute(state_group, "Current")
     end
+
+    if haskey(HDF5.attributes(state_group), "Magnetic Field")
+        finder.B_field = HDF5.read_attribute(state_group, "Magnetic Field")
+    end
 end
 
 "iterate through header and save data to HDF5 file"
-function save_data(header,sim_data,data_group)
-    for (i,h) in enumerate(header)
-        data_group["$h"] = sim_data[i]
+function save_data(header, sim_data, data_group)
+    for (i, h) in enumerate(header)
+        if haskey(data_group, h)
+            old_data = read(data_group[h])
+            append!(old_data, sim_data[i])
+            delete_object(data_group, h)
+            data_group[h] = old_data
+
+        else
+            data_group[h] = sim_data[i]
+        end
     end
 end
 

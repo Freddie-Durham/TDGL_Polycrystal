@@ -18,8 +18,8 @@ Base.string(::BVarLinX) = "Linear fit to find E(J) = Ec"
 state(finder::Finder) = MulTDGL.state(finder.solver)
 system(finder::Finder) = MulTDGL.system(finder.solver)
 
-const JcMode = Union{JcInitHold,JcJHold,JcDone}
-const LinXMode = Union{JcInitHold,JcJHold,BVarLinX,JcDone}
+const JcMode = Union{JcInitHold, JcJHold, JcDone}
+const LinXMode = Union{JcInitHold, JcJHold, BVarLinX, JcDone}
 
 "Calculate supercurrent density then return average value"
 function Js_avg(solver,sys,st)

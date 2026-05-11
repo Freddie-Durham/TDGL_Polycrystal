@@ -47,7 +47,8 @@ function run_simulation(;path, uID, startB, stopB, stepB,
     end
 
     filepath = "$(path)$(name)$(campaign).h5"
-    header = ["Current", "Electric Field"]
+    checkpoint_file = "$(path)$(name)$(campaign)_checkpoint.h5"
+    header = ["Current", "Electric Field", "Magnetic Field"]
     if !isfile(filepath)
         h5open(filepath, "w") do fid
             sim_grid = create_group(fid,"grid")
@@ -58,10 +59,16 @@ function run_simulation(;path, uID, startB, stopB, stepB,
             else    
                 TDGL_Polycrystal.key_metadata(sim_grid, weights, metadata)
             end
-            data_group = create_group(fid, "data")
-            if save_states
-                create_group(data_group, "save_state")
+            campaign_group = create_group(fid, "data")
+            for B in B_range
+                create_group(campaign_group, "$(B)b data")
             end
+        end
+    end
+
+    if save_states && !isfile(checkpoint_file)
+        h5open(checkpoint_file, "w") do fid
+            create_group(fid, "save_state")
         end
     end
     println("Setup Complete")
@@ -83,31 +90,31 @@ function run_simulation(;path, uID, startB, stopB, stepB,
         end
 
         if resume_states
-            h5open(filepath, "r") do fid
-                success = false
-                campaign_group = fid["data"]
-                if haskey(campaign_group, "save_state")
-                    state_group = campaign_group["save_state"]
+            if isfile(checkpoint_file)
+                h5open(checkpoint_file, "r") do fid
+                    state_group = fid["save_state"]
                     if haskey(state_group, "ψ")
-                        success = true
                         println("Resuming from saved state for B = $(B)")
                         TDGL_Polycrystal.load_state!(finder, state_group)
+                    else
+                        println("Saved state not found for B = $(B), starting new simulation")
                     end
                 end
-                if !success
-                    println("Failed to load state for B = $(B), starting new simulation")
-                end
+             
+            else
+                println("Save file not found for B = $(B), starting new simulation")   
             end
         end
 
         println("Running simulation with B = $(B)")
-        sim_data, timetaken = find_jc(finder, filepath=filepath, save_states=save_states, save_frequency=save_frequency)
+        sim_data, timetaken = find_jc(finder, filepath=filepath, checkpoint_file = checkpoint_file,
+            save_states=save_states, save_frequency=save_frequency, B=B, header=header)
 
         h5open(filepath, "r+") do fid
             campaign_group = fid["data"]
-
+            data_group = campaign_group["$(B)b data"]
             shot_metadata = Dict("Applied field" => B, "Time taken" => timetaken)
-            data_group = create_group(campaign_group, "$(B)b data")
+            
             TDGL_Polycrystal.save_data(header, sim_data, data_group)
             for (key, val) in shot_metadata 
                 HDF5.attributes(data_group)[key] = val
@@ -117,8 +124,8 @@ function run_simulation(;path, uID, startB, stopB, stepB,
 
     h5open(filepath,"r+") do fid
         HDF5.attributes(fid["grid"])["WallTime"] = time() - init_time
-        if save_states #remove save_state group to save space
-            delete_object(fid, "data/save_state") 
+        if save_states
+            rm(checkpoint_file)
         end
     end
     
