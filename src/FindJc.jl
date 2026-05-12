@@ -100,6 +100,11 @@ function next_step!(finder, ramp::Ramp_Method{Ramp_B, R}, parameters) where {R}
     if finder.B_field < ramp.mode.B_final
         finder.B_field += ramp.mode.B_ramp
         apply_B_field!(finder, finder.B_field)
+
+        # return to holding once B field has ramped
+        if finder.B_field >= ramp.mode.B_final
+            finder.mode = JcInitHold()
+        end
     else
         if finder.E_field < ramp.E_crit
             finder.curholdsteps = 0
