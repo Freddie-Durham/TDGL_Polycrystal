@@ -22,7 +22,7 @@ const JcMode = Union{JcInitHold, JcJHold, JcDone}
 const LinXMode = Union{JcInitHold, JcJHold, BVarLinX, JcDone}
 
 "Calculate supercurrent density then return average value"
-function Js_avg(solver,sys,st)
+function Js_avg(solver, sys, st)
     set_form!(solver.scratch_1, sys.m, sys.mat.m⁻¹, sys.u, st) do e, _, m, m⁻¹, u, st
         jₛₑ(m, m⁻¹, u, st.ψ, e)
     end

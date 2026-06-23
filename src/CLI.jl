@@ -1,5 +1,5 @@
 "save initial grid settings and metadata to HDF5 file"
-function key_metadata(sim_grid,start_α,start_β,start_m⁻¹,start_σ,metadata)
+function key_metadata(sim_grid, start_α, start_β, start_m⁻¹, start_σ, metadata)
     #save initial grid settings, can save on every timestep?
     sim_grid["α"] = start_α
     sim_grid["β"] = start_β
@@ -7,28 +7,28 @@ function key_metadata(sim_grid,start_α,start_β,start_m⁻¹,start_σ,metadata)
     sim_grid["σ_y"] = start_σ
 
     #append metadata for whole campaign to grid
-    for (key,val) in metadata 
+    for (key, val) in metadata 
         HDF5.attributes(sim_grid)[key] = val
     end
 end
 
 "save initial grid settings (only weights) and metadata to HDF5 file"
-function key_metadata(sim_grid,weights,metadata)
+function key_metadata(sim_grid, weights, metadata)
     #save initial grid settings, can save on every timestep?
     sim_grid["Weights"] = weights
 
     #append metadata for whole campaign to grid
-    for (key,val) in metadata 
+    for (key, val) in metadata 
         HDF5.attributes(sim_grid)[key] = val
     end
 end
 
 "create path to HDF5 file and save metadata and initial grid settings"
-function save_metadata(path,name,metadata,start_α,start_β,start_m⁻¹,start_σ)
+function save_metadata(path, name, metadata, start_α, start_β, start_m⁻¹, start_σ)
     filepath = "$(path)$(name).h5"
-    h5open(filepath,"cw") do fid
-        sim_grid = create_group(fid,"grid")
-        key_metadata(sim_grid,start_α,start_β,start_m⁻¹,start_σ,metadata)
+    h5open(filepath, "cw") do fid
+        sim_grid = create_group(fid, "grid")
+        key_metadata(sim_grid, start_α, start_β, start_m⁻¹, start_σ, metadata)
     end
 end
 
@@ -104,7 +104,7 @@ end
 
 "convert number fraction to string percentage"
 function to_string(num)
-    num = convert(Int,floor(num*100))
+    num = convert(Int, floor(num * 100))
     return string(num)
 end
 
@@ -343,5 +343,5 @@ function parse_CL()
             arg_type = Bool
             default = false
     end
-    return parse_args(s,as_symbols=true)
+    return parse_args(s, as_symbols=true)
 end

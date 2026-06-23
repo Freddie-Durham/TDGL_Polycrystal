@@ -98,7 +98,7 @@ function get_params(tstep,GL)
 end
 
 "Returns a state for a system"
-function get_state(n0,n1,m::RectMesh{N,R},backend,seed) where {N,R}
+function get_state(n0, n1, m::RectMesh{N,R}, backend, seed) where {N,R}
     # initial state
     ψdata = Adapt.adapt(backend, exp.(Complex{R}(2π * im) .* rand(Xoshiro(seed), R, n0)))
     ψ = RectPrimalForm0Data(m, ψdata)        # wavefunction with random phase (same every time function is called)
@@ -228,12 +228,12 @@ function simulation_setup(vortex_radius, pattern, tstep, GL, init_σ, norm_resis
     "yMesh" => mesh.extent[2], "Vortex radius (pixels)" => vortex_radius, "xPeriodic" => string(mesh.periodic[1]),
     "yPeriodic" => string(mesh.periodic[2]), "Tolerance" => tol, "Multigrid steps" => levelcount,
     "α_s" => init_alpha, "β_s" => init_beta, "Effective electron mass" => norm_mass, "Normal resistivity" => norm_resist,
-    "α_n" => alphaN, "β_n" => betaN,"Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
-    "J ramp" => Jramp, "E criterion" => Ecrit,
-    "Date" => string(now()), "Backend" => bknd, "Random seed" => rng_seed,"Finder" => string(finder),"MulTDGL Version no." => string(pkgversion(MulTDGL)),
+    "α_n" => alphaN, "β_n" => betaN, "Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
+    "J ramp" => Jramp, "E criterion" => Ecrit, "Date" => string(now()), "Backend" => bknd,
+    "Random seed" => rng_seed, "Finder" => string(finder), "MulTDGL Version no." => string(pkgversion(MulTDGL)),
     "TDGL_Polycrystal Version no." => Version)
     
-    append_metadata!(metadata,pattern)
+    append_metadata!(metadata, pattern)
 
     return f_jc, metadata, start_α, start_β, start_m⁻¹X, start_σY
 end

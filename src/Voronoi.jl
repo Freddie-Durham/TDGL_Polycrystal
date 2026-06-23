@@ -247,22 +247,22 @@ function create_3D_mesh(tess::Lattice3D,dims,thick,verbose=false)
     return min.(mesh,Float32(1.0))
 end
 
-function interpolate_edges(mesh,periodic)
+function interpolate_edges(mesh, periodic)
     dims = size(mesh)
-    meshx = zeros(Float32, (dims[1]-1+periodic[1],dims[2],dims[3]))
-    meshy = zeros(Float32, (dims[1],dims[2]-1+periodic[2],dims[3]))
-    meshz = zeros(Float32, (dims[1],dims[2],dims[3]-1+periodic[3]))
+    meshx = zeros(Float32, (dims[1] - 1 + periodic[1], dims[2], dims[3]))
+    meshy = zeros(Float32, (dims[1], dims[2] - 1 + periodic[2], dims[3]))
+    meshz = zeros(Float32, (dims[1], dims[2], dims[3] - 1 + periodic[3]))
 
     for I in CartesianIndices(meshx)
-        meshx[I] = 0.5 * (mesh[I] + mesh[mod1(I[1]+1,dims[1]),I[2],I[3]])
+        meshx[I] = 0.5 * (mesh[I] + mesh[mod1(I[1] + 1, dims[1]), I[2], I[3]])
     end
 
     for I in CartesianIndices(meshy)
-        meshy[I] = 0.5 * (mesh[I] + mesh[I[1],mod1(I[2]+1,dims[2]),I[3]])
+        meshy[I] = 0.5 * (mesh[I] + mesh[I[1], mod1(I[2] + 1, dims[2]), I[3]])
     end
 
     for I in CartesianIndices(meshz)
-        meshz[I] = 0.5 * (mesh[I] + mesh[I[1],I[2],mod1(I[3]+1,dims[3])])
+        meshz[I] = 0.5 * (mesh[I] + mesh[I[1], I[2], mod1(I[3] + 1, dims[3])])
     end
 
     return meshx, meshy, meshz

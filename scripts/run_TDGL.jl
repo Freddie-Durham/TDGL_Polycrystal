@@ -1,10 +1,10 @@
 using TDGL_Polycrystal
 using HDF5
 
-function run_simulation(;uID,startB,stopB,stepB,
-    pixels_per_xi,AA_factor,tstep,GL,levelcount,tol,conductivity,norm_resist,norm_mass,
-    ramp_mode,Ecrit,Jramp,J_initial,holdtime,init_hold,N_value,rep_grain,thickness,
-    xmin,ymin,yperiodic,alphaN,betaN,init_alpha,init_beta,backend,rng_seed,kwargs...)
+function run_simulation(;uID, startB, stopB, stepB,
+    pixels_per_xi, AA_factor, tstep, GL, levelcount, tol, conductivity, norm_resist, norm_mass,
+    ramp_mode, Ecrit, Jramp, J_initial, holdtime, init_hold, N_value, rep_grain, thickness,
+    xmin, ymin, yperiodic, alphaN, betaN, init_alpha, init_beta, backend, rng_seed, kwargs...)
     init_time = time()
 
     stopB = startB + stopB
@@ -22,12 +22,12 @@ function run_simulation(;uID,startB,stopB,stepB,
     B_range = (startB/100):(stepB/100):(stopB/100)
 
     FindType = JcFinder
-    pattern = TDGL_Polycrystal.TruncOct(N_value,xmin,rep_grain,thickness,AA_factor)
+    pattern = TDGL_Polycrystal.TruncOct(N_value, xmin, rep_grain, thickness, AA_factor)
 
     finder, metadata, start_α,start_β,start_m⁻¹,start_σ = simulation_setup(
-    pixels_per_xi,pattern,tstep,GL,conductivity,norm_resist,norm_mass,Ecrit,Jramp,
-    holdtime,init_hold,xmin,ymin,yperiodic,
-    alphaN,betaN,init_alpha,init_beta,FindType,levelcount,tol,backend,rng_seed,
+    pixels_per_xi, pattern, tstep, GL, conductivity, norm_resist, norm_mass, Ecrit, Jramp,
+    holdtime, init_hold, xmin, ymin, yperiodic,
+    alphaN, betaN, init_alpha, init_beta, FindType, levelcount, tol, backend, rng_seed,
     J_initial,B_range[1],ramp_mode)
 
     path = "outputs/"
@@ -44,7 +44,7 @@ function run_simulation(;uID,startB,stopB,stepB,
     header = ["Current","Electric Field"]
     h5open(filepath,"w") do fid
         sim_grid = create_group(fid,"grid")
-        TDGL_Polycrystal.key_metadata(sim_grid,start_α,start_β,start_m⁻¹,start_σ,metadata)
+        TDGL_Polycrystal.key_metadata(sim_grid, start_α, start_β, start_m⁻¹, start_σ, metadata)
         println("Setup Complete")
 
         #create folder for current campaign
@@ -53,22 +53,22 @@ function run_simulation(;uID,startB,stopB,stepB,
         #iterate through B fields, recording data and shot-specific metadata
         for B in B_range
             finder = TDGL_Polycrystal.new_finder(
-            finder,FindType,Ecrit,holdtime,init_hold,Jramp,J_initial,B,tol,levelcount,backend,rng_seed,ramp_mode)
+            finder, FindType, Ecrit, holdtime, init_hold, Jramp, J_initial, B, tol, levelcount, backend, rng_seed, ramp_mode)
 
             println("Running simulation with B = $(B)")
             sim_data, timetaken = find_jc(finder)
 
-            shot_metadata = Dict("Applied field" => B,"Time taken" => timetaken)
-            data_group = create_group(campaign_group,"$(B)b data")
-            TDGL_Polycrystal.save_data(header,sim_data,data_group)
+            shot_metadata = Dict("Applied field" => B, "Time taken" => timetaken)
+            data_group = create_group(campaign_group, "$(B)b data")
+            TDGL_Polycrystal.save_data(header, sim_data, data_group)
             for (key,val) in shot_metadata 
                 HDF5.attributes(data_group)[key] = val
             end
         end 
-        HDF5.attributes(sim_grid)["WallTime"] = time()-init_time
+        HDF5.attributes(sim_grid)["WallTime"] = time() - init_time
         
     end 
-    println("Simulation complete, time taken = $(time()-init_time)")  
+    println("Simulation complete, time taken = $(time() - init_time)")  
 end
 
 function main()

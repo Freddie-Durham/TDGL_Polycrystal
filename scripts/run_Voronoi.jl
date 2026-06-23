@@ -40,7 +40,7 @@ function run_simulation(;path, uID, startB, stopB, stepB,
     name = "$(uID)/"
     mkpath(path*name)
 
-    #Save params of B field range for plotting
+    # save params of B field range for plotting
     h5open("$(path)$(name)params$(convert(Int64,round(startB))).h5", "w") do fid
         current_B = create_group(fid, "params")
         current_B["Bs"] = Vector{Float64}(B_range)
@@ -53,7 +53,7 @@ function run_simulation(;path, uID, startB, stopB, stepB,
         h5open(filepath, "w") do fid
             sim_grid = create_group(fid,"grid")
 
-            #weights is either a single 3D mesh or a tuple of 2D meshes
+            # weights is either a single 3D mesh or a tuple of 2D meshes
             if dims < 3
                 TDGL_Polycrystal.key_metadata(sim_grid, start_α, start_β, start_m⁻¹, start_σ, metadata)
             else    
@@ -73,7 +73,7 @@ function run_simulation(;path, uID, startB, stopB, stepB,
     end
     println("Setup Complete")
 
-    #iterate through B fields, recording data and shot-specific metadata
+    # iterate through B fields, recording data and shot-specific metadata
     for B in B_range
         if !continuous || B == B_range[1]
             finder = TDGL_Polycrystal.new_finder(
@@ -81,7 +81,7 @@ function run_simulation(;path, uID, startB, stopB, stepB,
             
             if finder.ramp_method isa TDGL_Polycrystal.Ramp_Method{TDGL_Polycrystal.Exp_Decrease}
                 println("Ramping down current")
-                J_initial = max(J_initial * 0.8, Ecrit * 1.25) #should account for conductivity
+                J_initial = max(J_initial * 0.8, Ecrit * 1.25) # should account for conductivity
             end
         else
             apply_B_field!(finder, B)

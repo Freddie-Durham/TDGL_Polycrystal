@@ -171,7 +171,7 @@ function step!(finder::JcFinder{N, R}) where {N, R}
     sys = system(finder)
     parameters = sys.p
 
-    jc_bcs!(finder,sys)
+    jc_bcs!(finder, sys)
     current_array = zeros(R, N)
     current_array[1] = finder.j
     applied_current = NTuple{N, R}(current_array)
@@ -240,6 +240,6 @@ function find_jc(f_jc::JcFinder, verbose::Bool=true;
             end
         end
     end
-    timetaken = time()-starttime
+    timetaken = time() - starttime
     return [current, e_field, b_field, mode], timetaken
 end
