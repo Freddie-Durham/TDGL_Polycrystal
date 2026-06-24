@@ -9,7 +9,7 @@ function run_simulation(device, B, folder; kwargs...)
     @info "Starting simulation" device=CUDA.device()
 
     N = 10^7
-    x = CUDA.fill(Float32(sim_id), N)
+    x = CUDA.fill(Float32(B), N)
     y = CUDA.rand(Float32, N)
 
     for _ in 1:100
@@ -23,6 +23,8 @@ function run_simulation(device, B, folder; kwargs...)
 end
 
 function setup_simulation(;path, uID, startB, stopB, stepB, kwargs...)
+    init_time = time()
+    
     name = "$(uID)/"
     folder = path * name
     mkpath(folder)
@@ -35,7 +37,7 @@ function setup_simulation(;path, uID, startB, stopB, stepB, kwargs...)
 
     @sync for i in eachindex(Bs)
         Threads.@spawn begin
-            run_simulation(devs[i], Bs[i], folder; kwargs...)
+            run_simulation(devices[i], Bs[i], folder; kwargs...)
         end
     end
     
@@ -47,4 +49,3 @@ function main()
     setup_simulation(;kwargs...)
 end
 main()
-
