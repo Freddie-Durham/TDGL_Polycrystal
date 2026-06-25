@@ -199,14 +199,12 @@ function find_jc(f_jc::JcFinder, verbose::Bool=true;
     current = Vector{Float64}([])
     b_field = Vector{Float64}([])
     e_field = Vector{Float64}([])
-    mode = Vector{String}([])
 
     starttime = time()
     count = 0
     while f_jc.mode != JcDone()
         count += 1
         push!(b_field, f_jc.B_field)
-        push!(mode, string(f_jc.mode))
         push!(current, f_jc.j)
         push!(e_field, f_jc.E_field)
         if verbose
@@ -215,7 +213,6 @@ function find_jc(f_jc::JcFinder, verbose::Bool=true;
             println("Current = $(f_jc.j)")
             println("Electric Field = $(f_jc.E_field)")
             println("Magnetic Field = $(f_jc.B_field)")
-            println("Mode = "*string(f_jc.mode))
             flush(stdout)
         else
             step!(f_jc)
@@ -241,5 +238,5 @@ function find_jc(f_jc::JcFinder, verbose::Bool=true;
         end
     end
     timetaken = time() - starttime
-    return [current, e_field, b_field, mode], timetaken
+    return [current, e_field, b_field], timetaken
 end

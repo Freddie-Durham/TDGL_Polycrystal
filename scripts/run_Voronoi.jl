@@ -38,10 +38,10 @@ function run_simulation(;path, uID, startB, stopB, stepB,
     end
 
     name = "$(uID)/"
-    mkpath(path*name)
+    mkpath(path * name)
 
     # save params of B field range for plotting
-    h5open("$(path)$(name)params$(convert(Int64,round(startB))).h5", "w") do fid
+    h5open("$(path)$(name)params$(convert(Int64, round(startB))).h5", "w") do fid
         current_B = create_group(fid, "params")
         current_B["Bs"] = Vector{Float64}(B_range)
     end
@@ -51,7 +51,7 @@ function run_simulation(;path, uID, startB, stopB, stepB,
     header = ["Current", "Electric Field", "Magnetic Field"]
     if !isfile(filepath)
         h5open(filepath, "w") do fid
-            sim_grid = create_group(fid,"grid")
+            sim_grid = create_group(fid, "grid")
 
             # weights is either a single 3D mesh or a tuple of 2D meshes
             if dims < 3
