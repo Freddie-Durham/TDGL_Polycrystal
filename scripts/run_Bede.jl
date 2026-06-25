@@ -3,10 +3,10 @@ using HDF5
 using CUDA
 using Base.Threads
 
-function run_simulation(device, B, folder, init_time; 
-    pixels_per_xi, tstep, GL, levelcount, tol, conductivity, norm_resist, norm_mass, 
-    ramp_mode, Ecrit, Jramp, J_initial, holdtime, init_hold, grain_size, thickness, 
-    xmin, ymin, zmin, yperiodic, zperiodic, alphaN, betaN, init_alpha, init_beta, backend, 
+function run_simulation(device, B, folder, init_time;
+    pixels_per_xi, tstep, GL, levelcount, tol, conductivity, norm_resist, norm_mass,
+    ramp_mode, Ecrit, Jramp, J_initial, holdtime, init_hold, grain_size, thickness,
+    xmin, ymin, zmin, yperiodic, zperiodic, alphaN, betaN, init_alpha, init_beta, backend,
     rng_seed, voronoi_seed, dims, save_states, save_frequency, resume_states, kwargs...)
 
     CUDA.device!(device)
@@ -54,7 +54,7 @@ function run_simulation(device, B, folder, init_time;
 
             if dims < 3
                 TDGL_Polycrystal.key_metadata(sim_grid, start_α, start_β, start_m⁻¹, start_σ, metadata)
-            else    
+            else
                 TDGL_Polycrystal.key_metadata(sim_grid, weights, metadata)
             end
             campaign_group = create_group(fid, "data")
@@ -88,7 +88,6 @@ function run_simulation(device, B, folder, init_time;
                 # this also shouldn't happen
                 @info "Checkpoint file empty for magnetic field $(B)"
                 rm(checkpoint_file)
-                return
             end
         end
     end
@@ -119,7 +118,7 @@ end
 
 function setup_simulation(;path, uID, startB, stopB, stepB, kwargs...)
     init_time = time()
-    
+
     name = "$(uID)/"
     folder = path * name
     mkpath(folder)
@@ -135,7 +134,7 @@ function setup_simulation(;path, uID, startB, stopB, stepB, kwargs...)
         end
     end
     
-    println("Simulation complete, time taken = $(time() - init_time)")  
+    println("Simulation complete, time taken = $(time() - init_time)")
 end
 
 function main()
