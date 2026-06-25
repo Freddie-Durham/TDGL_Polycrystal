@@ -103,14 +103,17 @@ function find_jc(f_jc::EvsJ,verbose::Bool=true)
         push!(super_current,f_jc.js[1])
         push!(e_field,f_jc.E_field)
         if verbose && (f_jc.curholdsteps % f_jc.shortholdtime == 0)
-            @time step!(f_jc)
-            println("Time taken = $(time()-starttime)")
-            println("Current = $(f_jc.j)")
-            println("Supercurrent = $(f_jc.js)")
-            println("Displacement Current = $(J_disp)")
-            println("Electric Field = $(f_jc.E_field)")
-            println("Magnetic Field = $(f_jc.B_field)")
-            println("Current hold: $(f_jc.curholdsteps)")
+            step_time = @elapsed step!(f_jc)
+            verbose_update([
+                "Step time = $(step_time)",
+                "Time taken = $(time() - starttime)",
+                "Current = $(f_jc.j)",
+                "Supercurrent = $(f_jc.js)",
+                "Displacement Current = $(J_disp)",
+                "Electric Field = $(f_jc.E_field)",
+                "Magnetic Field = $(f_jc.B_field)",
+                "Current hold: $(f_jc.curholdsteps)",
+            ])
         else
             step!(f_jc)
         end

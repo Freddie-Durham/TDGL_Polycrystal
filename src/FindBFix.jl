@@ -73,12 +73,15 @@ function find_jc(f_jc::Bfixed,verbose::Bool=true)
         push!(current,f_jc.j)
         push!(e_field,f_jc.E_field)
         if verbose
-            @time step!(f_jc)
-            println("Time taken = $(time()-starttime)")
-            println("Current = $(f_jc.j)")
-            println("Electric Field = $(f_jc.E_field)")
-            println("Magnetic Field = $(f_jc.B_field)")
-            println("Current hold: $(f_jc.curholdsteps)")
+            step_time = @elapsed step!(f_jc)
+            verbose_update([
+                "Step time = $(step_time)",
+                "Time taken = $(time() - starttime)",
+                "Current = $(f_jc.j)",
+                "Electric Field = $(f_jc.E_field)",
+                "Magnetic Field = $(f_jc.B_field)",
+                "Current hold: $(f_jc.curholdsteps)",
+            ])
         else
             step!(f_jc)
         end

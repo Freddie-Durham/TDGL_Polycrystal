@@ -194,7 +194,8 @@ end
 
 "Run stepping code and record electric field, current and time taken"
 function find_jc(f_jc::JcFinder, verbose::Bool=true;
-    filepath="", checkpoint_file="", save_states=false, save_frequency=10_000, B = 0.0, header=[])
+    filepath="", checkpoint_file="", save_states=false, save_frequency=10_000, B = 0.0, header=[],
+    verbose_context="")
 
     current = Vector{Float64}([])
     b_field = Vector{Float64}([])
@@ -208,19 +209,21 @@ function find_jc(f_jc::JcFinder, verbose::Bool=true;
         push!(current, f_jc.j)
         push!(e_field, f_jc.E_field)
         if verbose
-            @time step!(f_jc)
-            println("Time taken = $(time()-starttime)")
-            println("Current = $(f_jc.j)")
-            println("Electric Field = $(f_jc.E_field)")
-            println("Magnetic Field = $(f_jc.B_field)")
-            flush(stdout)
+            step_time = @elapsed step!(f_jc)
+            verbose_update([
+                "Step time = $(step_time)",
+                "Time taken = $(time() - starttime)",
+                "Current = $(f_jc.j)",
+                "Electric Field = $(f_jc.E_field)",
+                "Magnetic Field = $(f_jc.B_field)",
+            ]; context=verbose_context)
         else
             step!(f_jc)
         end
 
         if save_states && (count % save_frequency == 0)
             if verbose
-                println("Saving state at step $count")
+                verbose_update(["Saving state at step $count"]; context=verbose_context)
             end
 
             h5open(checkpoint_file, "r+") do fid

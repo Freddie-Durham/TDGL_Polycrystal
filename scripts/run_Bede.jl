@@ -94,8 +94,10 @@ function run_simulation(device, B, folder, init_time;
 
     header = ["Current", "Electric Field", "Magnetic Field"]
 
+    verbose_context = "B=$(B), device=$(CUDA.device())"
     sim_data, timetaken = find_jc(finder, filepath=filepath, checkpoint_file=checkpoint_file,
-        save_states=save_states, save_frequency=save_frequency, B=B, header=header)
+        save_states=save_states, save_frequency=save_frequency, B=B, header=header,
+        verbose_context=verbose_context)
 
     h5open(filepath, "r+") do fid
         campaign_group = fid["data"]
