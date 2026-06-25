@@ -87,6 +87,7 @@ function run_simulation(device, B, folder, init_time;
             else
                 # this also shouldn't happen
                 @info "Checkpoint file empty for magnetic field $(B)"
+                rm(checkpoint_file)
                 return
             end
         end
