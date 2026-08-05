@@ -123,8 +123,7 @@ end
 
 "Returns a rectilinear mesh for a 2D system, accounting for requirements of multigrid"
 function get_mesh(pixels, xdim, ydim, yperiodic)
-    # simulation mesh
-    extent = (xdim, ydim) .* pixels
+    extent = Int.((xdim, ydim) .* pixels)
     periodic = (true, yperiodic)
     h = (1.0/pixels, 1.0/pixels) # grid step
     return MulTDGL.RectMesh(extent, periodic, h)
@@ -132,8 +131,7 @@ end
 
 "Returns a rectilinear mesh for a 3D system, accounting for requirements of multigrid"
 function get_3D_mesh(type, pixels, xdim, ydim, zdim, yperiodic=true, zperiodic=true)
-    # simulation mesh
-    extent = (xdim, ydim, zdim) .* pixels
+    extent = Int.((xdim, ydim, zdim) .* pixels)
     periodic = (true, yperiodic, zperiodic)
     h = (type(1.0/pixels), type(1.0/pixels), type(1.0/pixels)) # grid step
     return MulTDGL.RectMesh(extent, periodic, h)
@@ -143,31 +141,26 @@ end
 function get_material(init_α, init_β, init_m⁻¹, init_σ, pixels, pattern, norm_resist, norm_mass, alphaN, betaN, m, backend)
     #relative weights of nodes based on whether inside or outside grain boundaries
     weights = apply_pattern(pattern, pixels, elemextent(m, ()))
-    #apply pattern to normalised α value
-    start_α = map(w->linear_interp(init_α, alphaN, w), weights)
 
-    #apply coating if non-periodic in y direction
-    if m.periodic[1] && !m.periodic[2] && typeof(pattern) == TruncOct
-        thickness = Int(7.5 * pixels)
-        start_α[:, 1:thickness] .= alphaN
-        start_α[:, end-thickness:end] .= alphaN
-    end
-    α = RectPrimalForm0Data(m, adapt(backend, reshape(start_α, :)))
+    #apply pattern to normalised values
+    start_α = map(w -> linear_interp(init_α, alphaN, w), weights)
+    start_β = map(w -> linear_interp(init_β, betaN, w), weights)
 
-    start_β = map(w->linear_interp(init_β, betaN, w), weights)
-    β = RectPrimalForm0Data(m, adapt(backend, reshape(start_β, :)))
-    
     #need two lots of conductivity for x and y 
-    start_σX = map(w->linear_interp(init_σ, 1/norm_resist, w), interp_edgesX(weights, m.periodic[1]))
-    start_σY = map(w->linear_interp(init_σ, 1/norm_resist, w), interp_edgesY(weights, m.periodic[2]))
-    σ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_σX, :), reshape(start_σY, :)))) 
+    start_σX = map(w -> linear_interp(init_σ, 1/norm_resist, w), interp_edgesX(weights, m.periodic[1]))
+    start_σY = map(w -> linear_interp(init_σ, 1/norm_resist, w), interp_edgesY(weights, m.periodic[2]))
 
     #same goes for reciprocal mass
-    start_m⁻¹X = map(w->linear_interp(init_m⁻¹, 1/norm_mass, w), interp_edgesX(weights, m.periodic[1]))
-    start_m⁻¹Y = map(w->linear_interp(init_m⁻¹, 1/norm_mass, w), interp_edgesY(weights, m.periodic[2]))
+    inv_mass = 1/norm_mass
+    start_m⁻¹X = map(w -> linear_interp(init_m⁻¹, inv_mass, w), interp_edgesX(weights, m.periodic[1]))
+    start_m⁻¹Y = map(w -> linear_interp(init_m⁻¹, inv_mass, w), interp_edgesY(weights, m.periodic[2]))
+
+    α = RectPrimalForm0Data(m, adapt(backend, reshape(start_α, :)))
+    β = RectPrimalForm0Data(m, adapt(backend, reshape(start_β, :)))
+    σ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_σX, :), reshape(start_σY, :)))) 
     m⁻¹ = RectPrimalForm1Data(m, adapt(backend, vcat(reshape(start_m⁻¹X, :), reshape(start_m⁻¹Y, :)))) 
 
-    return MulTDGL.Material(α, β, m⁻¹, σ), start_α, start_β, start_m⁻¹X, start_σY
+    return MulTDGL.Material(α, β, m⁻¹, σ), start_α, start_β, start_m⁻¹X, start_m⁻¹Y
 end
 
 "Setup material using Voronoi according to Blair(2022)"

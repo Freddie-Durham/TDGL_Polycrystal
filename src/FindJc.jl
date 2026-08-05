@@ -195,7 +195,7 @@ end
 "Run stepping code and record electric field, current and time taken"
 function find_jc(f_jc::JcFinder, verbose::Bool=true;
     filepath="", checkpoint_file="", save_states=false, save_frequency=10_000, B = 0.0, header=[],
-    verbose_context="")
+    verbose_context="", report_period=1)
 
     current = Vector{Float64}([])
     b_field = Vector{Float64}([])
@@ -208,7 +208,7 @@ function find_jc(f_jc::JcFinder, verbose::Bool=true;
         push!(b_field, f_jc.B_field)
         push!(current, f_jc.j)
         push!(e_field, f_jc.E_field)
-        if verbose
+        if verbose && (count % report_period == 0)
             step_time = @elapsed step!(f_jc)
             verbose_update([
                 "Step time = $(step_time)",

@@ -25,12 +25,14 @@ function append_metadata!(metadata::Dict, pattern::TruncOct)
 end
 
 struct JosephsonJunction 
-    junc_thick::Float64
+    thick::Float64
+    width::Int64
 end
 
 function append_metadata!(metadata::Dict, pattern::JosephsonJunction)
     metadata["Pattern"] = "Josephson Junction"
-    metadata["Junction Thickness (ξ)"] = pattern.junc_thick
+    metadata["Junction Thickness (ξ)"] = pattern.thick
+    metadata["Junction Width (ξ)"] = pattern.width
 end
 
 "Returns size and angle of grain to enable periodic BCs"
@@ -293,15 +295,13 @@ function apply_pattern(voronoi::Voronoi, pixels, veclen)
 end
 
 "Apply josephson junction pattern to a grid"
-function apply_pattern(JJ::JosephsonJunction, pixels, veclen)
+function apply_pattern(junc::JosephsonJunction, pixels, veclen)
     init_grid = zeros(Float64, veclen)
 
-    half_x = floor(Int64, veclen[1]/2)
-    junc_thick_xi = floor(Int64, JJ.junc_thick * pixels/2)
+    junc_thick = Int(pixels * junc.thick)
+    half_width = floor(Int, pixels * junc.width / 2)
 
-    init_grid[half_x-junc_thick_xi:half_x+junc_thick_xi, :] .= 1.0
-    #init_grid[half_x-junc_thick_xi:half_x+junc_thick_xi,end - floor(Int64,veclen[2]/3):end] .= 1.0
-    #init_grid[half_x-junc_thick_xi:half_x+junc_thick_xi,1:floor(Int64,veclen[2]/3)] .= 1.0
+    init_grid[half_width+1:half_width+junc_thick, :] .= 1.0
     return init_grid
 end
 
