@@ -45,7 +45,7 @@ function run_simulation(B, folder, init_time;
     pattern = TDGL_Polycrystal.JosephsonJunction(thickness, grain_size)
 
     xmin = grain_size + thickness
-    ymin = grain_size
+    ymin = grain_size + 2 * thickness
     yperiodic = false
 
     finder, metadata, start_α, start_β, start_m⁻¹X, start_m⁻¹Y = simulation_setup(
