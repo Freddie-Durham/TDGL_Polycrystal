@@ -300,13 +300,14 @@ function apply_pattern(junc::JosephsonJunction, pixels, veclen)
 
     junc_thick = Int(pixels * junc.thick)
     half_width = floor(Int, pixels * junc.width / 2)
+    coat_width = Int(pixels * 5.0)
 
     # normal barrier
     init_grid[half_width+1:half_width+junc_thick, :] .= 1.0
     # normal lower coating
-    init_grid[:, 1:junc_thick] .= 1.0
+    init_grid[:, 1:coat_width] .= 1.0
     # normal upper coating
-    init_grid[:, end-junc_thick+1:end] .= 1.0
+    init_grid[:, end-coat_width+1:end] .= 1.0
     return init_grid
 end
 
