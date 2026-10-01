@@ -319,9 +319,9 @@ function parse_CL()
             default = 0.0001
 
         "--ramp_mode"
-            help = "Mode of operation for finding Jc (default is linear current ramp)"
+            help = "Mode of operation for finding Jc (default is exponential current ramp)"
             arg_type = String
-            default = "LIN_INCREASE"
+            default = "EXP_INCREASE"
         
         "--save_states"
             help = "Boolean value determining whether to save the simulation state after each B field step"
