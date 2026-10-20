@@ -98,20 +98,24 @@ function run_simulation(device, B, folder, init_time;
         save_states=save_states, save_frequency=save_frequency, B=B, header=header,
         verbose_context=verbose_context)
 
-    h5open(filepath, "r+") do fid
+    # atomic, so a kill here leaves the previous data file and the checkpoint intact
+    TDGL_Polycrystal.atomic_h5_update(filepath) do fid
         campaign_group = fid["data"]
         data_group = campaign_group["$(B)b data"]
         shot_metadata = Dict("Applied field" => B, "Time taken" => timetaken)
         
         TDGL_Polycrystal.save_data(header, sim_data, data_group)
         for (key, val) in shot_metadata 
+            haskey(HDF5.attributes(data_group), key) && delete!(HDF5.attributes(data_group), key)
             HDF5.attributes(data_group)[key] = val
         end
 
+        haskey(HDF5.attributes(fid["grid"]), "WallTime") && delete!(HDF5.attributes(fid["grid"]), "WallTime")
         HDF5.attributes(fid["grid"])["WallTime"] = time() - init_time
-        if save_states || resume_states
-            rm(checkpoint_file)
-        end
+    end
+    # only remove the checkpoint once the final data is safely in place
+    if (save_states || resume_states) && isfile(checkpoint_file)
+        rm(checkpoint_file)
     end
 end
 

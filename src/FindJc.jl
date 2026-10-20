@@ -203,6 +203,11 @@ function find_jc(f_jc::JcFinder, verbose::Bool=true;
 
     starttime = time()
     count = 0
+    data_path = "data/$(B)b data"
+    if save_states
+        # drop any rows saved after the checkpoint we (may have) resumed from
+        sync_data_with_checkpoint(filepath, checkpoint_file, data_path, header)
+    end
     while f_jc.mode != JcDone()
         count += 1
         push!(b_field, f_jc.B_field)
@@ -226,18 +231,19 @@ function find_jc(f_jc::JcFinder, verbose::Bool=true;
                 verbose_update(["Saving state at step $count"]; context=verbose_context)
             end
 
-            h5open(checkpoint_file, "r+") do fid
-                TDGL_Polycrystal.save_state(f_jc, fid["save_state"], f_jc.j, f_jc.B_field)
-            end
-
-            h5open(filepath, "r+") do fid
-                campaign_group = fid["data"]
-                data_group = campaign_group["$(B)b data"]
+            # Both files are replaced atomically, data file first. A kill at any point
+            # leaves consistent files; extra data rows (kill between the two updates)
+            # are removed by sync_data_with_checkpoint when the job resumes.
+            data_rows = atomic_h5_update(filepath) do fid
+                data_group = fid[data_path]
                 save_data(header, [current, e_field, b_field], data_group)
-                current = Vector{Float64}([])
-                e_field = Vector{Float64}([])
-                b_field = Vector{Float64}([])
+                saved_rows(header, data_group)
             end
+            write_checkpoint(f_jc, checkpoint_file, data_rows)
+
+            current = Vector{Float64}([])
+            e_field = Vector{Float64}([])
+            b_field = Vector{Float64}([])
         end
     end
     timetaken = time() - starttime
