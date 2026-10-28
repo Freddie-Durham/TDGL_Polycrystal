@@ -4,7 +4,7 @@ using CUDA
 using Base.Threads
 
 function run_simulation(device, B, folder, init_time;
-    pixels_per_xi, tstep, GL, levelcount, tol, conductivity, norm_resist, norm_mass,
+    pixels_per_xi, tstep, GL, levelcount, tol, conductivity, norm_resist, norm_mass, anisotropy,
     ramp_mode, Ecrit, Jramp, J_initial, holdtime, init_hold, grain_size, thickness,
     xmin, ymin, zmin, yperiodic, zperiodic, alphaN, betaN, init_alpha, init_beta, backend,
     rng_seed, voronoi_seed, dims, save_states, save_frequency, resume_states, kwargs...)
@@ -43,7 +43,7 @@ function run_simulation(device, B, folder, init_time;
         levelcount, tol, backend, rng_seed, J_initial, B, ramp_mode)
     else
         finder, metadata, weights = simulation_setup_3D(
-        pixels_per_xi, pattern, tstep, GL, conductivity, norm_resist, norm_mass, Ecrit, Jramp, 
+        pixels_per_xi, pattern, tstep, GL, conductivity, norm_resist, norm_mass, anisotropy, Ecrit, Jramp, 
         holdtime, init_hold, xmin, ymin, zmin, yperiodic, zperiodic, alphaN, betaN, init_alpha,
         init_beta, FindType, levelcount, tol, backend, rng_seed, J_initial, B, ramp_mode)
     end

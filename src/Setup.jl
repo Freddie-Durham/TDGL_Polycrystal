@@ -164,7 +164,7 @@ function get_material(init_α, init_β, init_m⁻¹, init_σ, pixels, pattern, n
 end
 
 "Setup material using Voronoi according to Blair(2022)"
-function get_3D_material(init_α, init_β, init_m⁻¹, init_σ, pixels, pattern, norm_resist, norm_mass, alphaN, betaN, m::RectMesh{N,R}, backend) where {N,R}
+function get_3D_material(init_α, init_β, init_m⁻¹, init_σ, pixels, pattern, norm_resist, norm_mass, anisotropy, alphaN, betaN, m::RectMesh{N,R}, backend) where {N,R}
     #relative weights of nodes based on whether inside or outside grain boundaries
     weights = apply_3D_pattern(pattern, pixels, elemextent(m, ()))
 
@@ -186,7 +186,7 @@ function get_3D_material(init_α, init_β, init_m⁻¹, init_σ, pixels, pattern
     m⁻¹ = RectPrimalForm1Data(m, adapt(backend, vcat(
         reshape(map(w -> R(linear_interp(init_m⁻¹, 1/norm_mass, w)), weights_x), :),
         reshape(map(w -> R(linear_interp(init_m⁻¹, 1/norm_mass, w)), weights_y), :),
-        reshape(map(w -> R(linear_interp(init_m⁻¹, 1/norm_mass, w)), weights_z), :)
+        reshape(map(w -> R(linear_interp(init_m⁻¹ / (anisotropy ^ 2), 1/norm_mass, w)), weights_z), :)
     )))
 
     return MulTDGL.Material(α, β, m⁻¹, σ), weights
@@ -232,7 +232,7 @@ function simulation_setup(vortex_radius, pattern, tstep, GL, init_σ, norm_resis
 end
 
 "Set up parameters of simulation using CUDA"
-function simulation_setup_3D(vortex_radius, pattern, tstep, GL, init_σ, norm_resist, norm_mass, Ecrit, Jramp, wait_time, init_hold_time, xdim, ydim, zdim, yperiodic, zperiodic, alphaN, betaN, init_alpha, init_beta, finder, levelcount, tol, bknd, rng_seed, J_init, B_init, args...;
+function simulation_setup_3D(vortex_radius, pattern, tstep, GL, init_σ, norm_resist, norm_mass, anisotropy, Ecrit, Jramp, wait_time, init_hold_time, xdim, ydim, zdim, yperiodic, zperiodic, alphaN, betaN, init_alpha, init_beta, finder, levelcount, tol, bknd, rng_seed, J_init, B_init, args...;
     storage_type = Float64)
 
     backend = interpret_backend(bknd)
@@ -247,7 +247,7 @@ function simulation_setup_3D(vortex_radius, pattern, tstep, GL, init_σ, norm_re
     init_m⁻¹ = 1.0
     material, weights = get_3D_material(
     init_alpha, init_beta, init_m⁻¹, init_σ, vortex_radius, pattern,
-    norm_resist, norm_mass, alphaN, betaN, mesh, backend)
+    norm_resist, norm_mass, anisotropy, alphaN, betaN, mesh, backend)
 
     system = jc_system(n1, n2, mesh, params, material, backend, B_init)
     state = get_state(n0, n1, mesh, backend, rng_seed)
@@ -260,7 +260,7 @@ function simulation_setup_3D(vortex_radius, pattern, tstep, GL, init_σ, norm_re
     "Periodic" => string(mesh.periodic), "Tolerance" => tol, "Multigrid steps" => levelcount,
     "α_s" => init_alpha, "β_s" => init_beta, "α_n" => alphaN, "β_n" => betaN,
     "GB Effective Mass" => norm_mass, "GB Resistivity" => norm_resist, "SC Effective Mass" => 1.0/init_m⁻¹, "SC Resistivity" => 1.0/init_σ,
-    "Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
+    "Anisotropy" => anisotropy, "Initial hold time" => init_hold_time, "Wait to stabilise" => wait_time,
     "J ramp" => Jramp, "E criterion" => Ecrit,"Date" => string(now()),
     "Backend" => bknd, "Random seed" => rng_seed,"Finder" => string(finder),
     "MulTDGL Version no." => string(pkgversion(MulTDGL)), "TDGL_Polycrystal Version no." => Version)

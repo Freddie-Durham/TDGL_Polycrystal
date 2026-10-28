@@ -1,12 +1,12 @@
 "save initial grid settings and metadata to HDF5 file"
 function key_metadata(sim_grid, start_α, start_β, start_m⁻¹, start_σ, metadata)
-    #save initial grid settings, can save on every timestep?
+    # save initial grid settings, can save on every timestep?
     sim_grid["α"] = start_α
     sim_grid["β"] = start_β
     sim_grid["m⁻¹_x"] = start_m⁻¹
     sim_grid["σ_y"] = start_σ
 
-    #append metadata for whole campaign to grid
+    # append metadata for whole campaign to grid
     for (key, val) in metadata 
         HDF5.attributes(sim_grid)[key] = val
     end
@@ -14,10 +14,10 @@ end
 
 "save initial grid settings (only weights) and metadata to HDF5 file"
 function key_metadata(sim_grid, weights, metadata)
-    #save initial grid settings, can save on every timestep?
+    # save initial grid settings, can save on every timestep?
     sim_grid["Weights"] = weights
 
-    #append metadata for whole campaign to grid
+    # append metadata for whole campaign to grid
     for (key, val) in metadata 
         HDF5.attributes(sim_grid)[key] = val
     end
@@ -326,6 +326,11 @@ function parse_CL()
             help = "Effective carrier mass of the normal material in the superconducting matrix (proportional to resistivity)"
             arg_type = Float64
             default = 2.0
+
+        "--anisotropy"
+            help = "Anisotropy factor that increases effective mass in the z direction - used for simulating ReBCO"
+            arg_type = Float64
+            default = 1.0
 
         "--Ecrit"
             help = "Critical electric field criterion, used to determine the critical current density"
