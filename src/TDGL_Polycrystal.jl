@@ -11,14 +11,14 @@ using Adapt
 using ArgParse
 using Random
 
-const Version = "0.1.8" 
+const Version = "0.1.9" 
 
-include("Utilities.jl")
-include("Voronoi.jl")
-include("Crystal2D.jl")
-include("FindJc.jl")
-include("Setup.jl")
-include("CLI.jl")
+include("utilities.jl")
+include("voronoi.jl")
+include("pattern.jl")
+include("find_jc.jl")
+include("setup.jl")
+include("cli.jl")
 
 export JcFinder, simulation_setup, simulation_setup_3D,
     parse_CL, save_metadata, save_simdata, find_jc, apply_pattern,

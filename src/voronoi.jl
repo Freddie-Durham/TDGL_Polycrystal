@@ -12,7 +12,7 @@ function append_metadata!(metadata::Dict,pattern::Voronoi)
     metadata["Voronoi Seed"] = pattern.seed
 end
 
-struct Vertex{N,K<:AbstractFloat} 
+struct Vertex{N, K<:AbstractFloat} 
     p::SVector{N,K}
 end
 Vertex{N}(::Type{K}=Float64) where {N, K<:AbstractFloat} = Vertex(zeros(SVector{N,K}))
