@@ -112,8 +112,6 @@ end
 function interpret_backend(bknd)
     if uppercase(bknd) == "CUDA"
         return CUDABackend() # for NVIDIA GPUs
-    elseif uppercase(bknd) == "AMDGPU"
-        return AMDGPUBackend() # for AMD GPUs
     elseif uppercase(bknd) == "CPU"
         return CPU() # for CPU
     else

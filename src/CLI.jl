@@ -236,12 +236,6 @@ function sync_data_with_checkpoint(filepath, checkpoint_file, data_path, header)
     end
 end
 
-"convert number fraction to string percentage"
-function to_string(num)
-    num = convert(Int, floor(num * 100))
-    return string(num)
-end
-
 "parse arguments from command line, if nothing is passed in, a default value is used instead"
 function parse_CL()
     s = ArgParseSettings()

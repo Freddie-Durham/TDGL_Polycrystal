@@ -13,7 +13,6 @@ using Random
 
 const Version = "0.1.8" 
 
-include("Defs.jl")
 include("Utilities.jl")
 include("Voronoi.jl")
 include("Crystal2D.jl")
@@ -21,7 +20,7 @@ include("FindJc.jl")
 include("Setup.jl")
 include("CLI.jl")
 
-export JcFinder, Bfixed, BVarLinXFinder, simulation_setup, simulation_setup_3D,
-    parse_CL, to_string, save_metadata, save_simdata, find_jc, apply_pattern,
-    JcInitHold, JcJHold, JcDone, BVarLinX, EvsJ, step!, apply_B_field!
+export JcFinder, simulation_setup, simulation_setup_3D,
+    parse_CL, save_metadata, save_simdata, find_jc, apply_pattern,
+    JcInitHold, JcJHold, JcDone, step!, apply_B_field!
 end #module TDGL_Polycrystal

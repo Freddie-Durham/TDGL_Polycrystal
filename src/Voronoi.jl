@@ -216,8 +216,6 @@ function draw_face!(mesh,verts,thick)
     end
 end
 
-tri_area(a,b,c) = 0.5 * norm(cross(b - a, c - a))
-
 function create_3D_mesh(tess::Lattice3D,dims,thick,verbose=false)
     mesh = zeros(Float32,dims)
 

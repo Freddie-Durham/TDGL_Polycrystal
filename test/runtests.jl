@@ -3,58 +3,51 @@ using MulTDGL
 using KernelAbstractions
 using Adapt
 using CUDA
+using HDF5
 using Test
 
-const B_app = 0.95
-const B_step = 0.01
-const Bmax = 0.03
-const Bstart = 0.0
-const num_samples = 5
-const pixels = 2
-const N = 2
-const num_crystal = 1
-const grain_thick = 2
-const grain_size = 30.0
-const crystalangle = 30*π/180
-const tstep = 1.0
+const B_app = 0.5
+const pixels = 1
+const tstep = 0.5
 const GL = 10.0
 const init_σ = 1.0
 const norm_res = 2.0
-const norm_mass = 0.5
-const Ecrit = 1e-5
+const norm_mass = 2.0
+const Ecrit = 1e-4
 const Jramp = 1e-4
-const init_hold_time = 50
-const wait_time = 50
-const xmin = 32
-const ymin = 32
-const alphaN = -1
+const init_hold_time = 2
+const wait_time = 2
+const xmin = 8
+const ymin = 8
+const zmin = 8
+const alphaN = -1.0
 const betaN = 1.0
-const levelcount = 4
+const levelcount = 2
 const tol = 1e-3
 const yperiodic = true
 
-const Verbose = false
-const expensive = false
-
-bknd = "CPU"
-backend = CPU()
-if CUDA.functional()
-    bknd = "CUDA"
-    backend = CUDABackend()
-end
-
 @testset "TDGL Polycrystal Tests" begin
-    @testset "Utils" begin
+    @testset "Utilities.jl" begin
         include("test_utils.jl")
     end
 
-    @testset "Crystal Lattice" begin
-        include("test_crystal.jl")
+    @testset "Voronoi.jl" begin
+        include("test_voronoi.jl")
     end
 
-    if expensive
-        @testset "2D Simulations" begin
-            include("test_2D.jl")
-        end
+    @testset "Crystal2D.jl" begin
+        include("test_crystal2d.jl")
+    end
+
+    @testset "Setup.jl" begin
+        include("test_setup.jl")
+    end
+
+    @testset "FindJc.jl" begin
+        include("test_findjc.jl")
+    end
+
+    @testset "CLI.jl" begin
+        include("test_cli.jl")
     end
 end
