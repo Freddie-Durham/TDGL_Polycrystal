@@ -1,29 +1,5 @@
 const corners = [[-0.5, 0.5], [0.5, 0.5], [0.5, -0.5], [-0.5, -0.5]]
 
-#grain size and GB thickness in coherence lengths
-struct TruncOct 
-    grain_size::Float64
-    grain_thick::Float64
-    rep_grain::Int64
-    angle::Float64
-    factor::Int64
-    shape::Any
-end
-
-function TruncOct(N::Integer, xmin::Integer, rep_grain::Integer, grain_thick::Float64, factor::Integer)
-    grainangle, grain_diameter = periodic_crystal(N, fld(xmin, rep_grain))
-    return TruncOct(grain_diameter, grain_thick, rep_grain, grainangle, factor, octagon!)
-end
-
-function append_metadata!(metadata::Dict, pattern::TruncOct)
-    metadata["Pattern"] = "Truncated Octahedra"
-    metadata["Grain size (ξ)"] = pattern.grain_size
-    metadata["Grain Boundary Thickness (ξ)"] = pattern.grain_thick
-    metadata["Lattice angle (rads)"] = pattern.angle
-    metadata["Anti-aliasing factor"] = pattern.factor
-    metadata["Multiple of grains"] = pattern.rep_grain
-end
-
 struct JosephsonJunction 
     thick::Float64
     width::Int64
@@ -33,13 +9,6 @@ function append_metadata!(metadata::Dict, pattern::JosephsonJunction)
     metadata["Pattern"] = "Josephson Junction"
     metadata["Junction Thickness (ξ)"] = pattern.thick
     metadata["Junction Width (ξ)"] = pattern.width
-end
-
-"Returns size and angle of grain to enable periodic BCs"
-function periodic_crystal(n, width)
-    θ = atan(1/n)
-    a = width/(n * cos(θ) + sin(θ))
-    return θ, a
 end
 
 "returns true if the point P is inside the rectangle defined by perpendicular edges AB and BC"
@@ -169,124 +138,6 @@ function simple_line!(mesh, orig, dest, thick)
     @inbounds @simd for I in boundingbox
         mesh[I] += area_inside_box(I.I, box)
     end
-end
-
-"Calculate how close a point is to a 2D rectangular slab"
-function isclose(x, y, dx, dy, thickness)
-    if dy == 0
-        xoff = 0
-    else
-        xoff = x - y * dx/dy
-    end
-    if dx==0
-        yoff = 0
-    else
-        yoff = y - x * dy/dx
-    end
-    return (xoff^2 + yoff^2) < thickness^2
-end
-
-"Returns the endpoint of a line of certain length and angle from orig "
-function get_dest(orig,length,angle)
-    dx = Int(round(length * cos(angle)))
-    dy = Int(round(length * sin(angle)))
-    
-    return [orig[1] + dx, orig[2] + dy]
-end
-
-"Draws a line in 2D in pixels"
-function drawline!(grid, orig, dest, thickness=1)
-    dx = dest[1] - orig[1]
-    dy = dest[2] - orig[2]
-
-    idir = dsign(dx)
-    jdir = dsign(dy)
-
-    #Deal with special cases of vertical and horizontal lines
-    is_vert = dx==0 ? 1 : 0
-    is_horiz = dy==0 ? 1 : 0
-    domain_thickness = Int(ceil(thickness/2))
-
-    diff = Int.(floor.(thickness / 2(sqrt(dx^2 + dy^2)) * [dx, dy]))
-    newdest = dest .- diff
-    neworig = orig .+ diff
-
-    imin = neworig[1] - is_vert * domain_thickness - idir * domain_thickness
-    imax = newdest[1] + is_vert * domain_thickness + idir * domain_thickness
-    jmin = neworig[2] - is_horiz * domain_thickness - jdir * domain_thickness
-    jmax = newdest[2] + is_horiz * domain_thickness + jdir * domain_thickness
-
-    for i in imin:idir:imax
-        for j in jmin:jdir:jmax
-            if isclose(i - neworig[1], j - neworig[2], dx, dy, thickness) && issafe(i, size(grid)[1]) && issafe(j, size(grid)[2])
-                grid[i,j] = 1.0
-            end
-        end
-    end
-end
-
-"Draw a square using drawline!"
-function square!(grid, origin, len, thickness, angle)
-    dest = get_dest(origin, len, angle)
-    drawline!(grid, origin, dest, thickness)
-
-    for a in [π/2, -π, 3*π/2]
-        origin = dest
-        dest = get_dest(origin, len, a + angle)
-        drawline!(grid, origin, dest, thickness)
-    end
-end
-
-"Draw an octagon using drawline!"
-function octagon!(grid,origin,len,thickness,angle)
-    dest = get_dest(origin,len/4,angle) #Starts from bottom right corner
-
-    for a in [0,π/2,-π,3*π/2]
-        origin = dest
-        dest = get_dest(origin,len/2,angle+a)
-        drawline!(grid,origin,dest,thickness)
-        origin = dest
-        dest = get_dest(origin,sqrt(2)*len/4,π/4+angle+a)
-        drawline!(grid,origin,dest,thickness)
-    end
-end
-
-"Draw a series of identical shapes that tesselate space"
-function tesselate!(shape, grid, len, thickness, angle, xlen, ylen)
-    safety_factor = 2 # min = sqrt(2)
-    max_len = max(xlen, ylen)
-    long_side = safety_factor * max_len
-    next_i = [round(Int64, max_len/2 - max_len * (1 + safety_factor/sqrt(8)) * cos(π/4 + angle)),
-              round(Int64, max_len/2 - max_len * (1 + safety_factor/sqrt(8)) * sin(π/4 + angle))]
-
-    for i in 1:Int(ceil(long_side/len))
-        shape(grid, next_i, len, thickness, angle)
-        next_j = get_dest(next_i, len, π/2 + angle)
-
-        for j in 1:Int(ceil(long_side/len))
-            shape(grid, next_j, len, thickness, angle)
-            next_j = get_dest(next_j, len, π/2 + angle)
-        end
-        next_i = get_dest(next_i, len, angle)
-    end 
-end
-
-"Applies non_periodic boundary conditions along top and bottom with lerp smoothing"
-function non_periodic!(mesh, dims, ymin, ymax, startval=0, endval=1)
-    for i in 1:dims[1]
-        for j in ymin:ymax
-            lrp = lerp(ymin,ymax,j)
-            mesh[i, j] = startval * (1 - lrp) + endval * lrp
-            mesh[i, dims[2] + ymin - j] = startval * (1 - lrp) + endval * lrp
-        end
-    end
-end
-
-"Apply tesselating pattern to a grid at high resolution then return anti-aliased scaled down version"
-function apply_pattern(t::TruncOct, pixels, veclen)
-    init_grid = zeros(Float64, veclen .* t.factor)
-    tesselate!(t.shape, init_grid, t.grain_size * pixels * t.factor, t.grain_thick * pixels * t.factor, t.angle, veclen[1] * t.factor, veclen[2] * t.factor)
-    return lower_resolution(init_grid, t.factor)
 end
 
 function apply_pattern(voronoi::Voronoi, pixels, veclen)
