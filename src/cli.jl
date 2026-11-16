@@ -21,32 +21,17 @@ function parse_CL()
         "--stopB"
             help = "Final applied magnetic field strength, expressed as a difference from initial applied field"
             arg_type = Float64
-            default = 0.1
+            default = 0.05
 
         "--stepB"
             help = "Magnitude by which magnetic field strength is incremented"
             arg_type = Float64
             default = 0.05
 
-        "--num_samples"
-            help = "Maximum number of E(J) measurements taken for a given applied magnetic field"
-            arg_type = Int64
-            default = 5
-
-        "--max_steps"
-            help = "Maximum number of steps taken in fixed J/B mode, after which the simulation is stopped"
-            arg_type = Int64
-            default = 1000
-
         "--pixels_per_xi"
             help = "Number of grid steps in a single coherence length. Grid step h=1/pixels_per_xi"
             arg_type = Int64
-            default = 4
-
-        "--AA_factor"
-            help = "Factor by which resolution of grid is increased to anti-alias the rasterised pattern"
-            arg_type = Int64 
-            default = 5
+            default = 2
 
         "--tstep"
             help = "Time increment per simulation step, in the normalised TDGL time unit τ"
@@ -56,7 +41,7 @@ function parse_CL()
         "--GL"
             help = "Ginzburg-Landau parameter for the superconductor"
             arg_type = Float64
-            default = 10.0
+            default = 30.0
 
         "--levelcount"
             help = "Number of discretised grids of different coarseness used in the multigrid method"
@@ -76,12 +61,12 @@ function parse_CL()
         "--norm_resist"
             help = "Resistivity of the normal material in the superconducting matrix (proportional to effective carrier mass)"
             arg_type = Float64
-            default = 2.0
+            default = 1.0
 
         "--norm_mass"
             help = "Effective carrier mass of the normal material in the superconducting matrix (proportional to resistivity)"
             arg_type = Float64
-            default = 2.0
+            default = 1.0
 
         "--anisotropy"
             help = "Anisotropy factor that increases effective mass in the z direction - used for simulating ReBCO"
@@ -101,22 +86,12 @@ function parse_CL()
         "--holdtime"
             help = "Number of timesteps (--tstep) the system is held for at the same magnetic field and current density to reach equilibrium"
             arg_type = Int64
-            default = 500
+            default = 10000
 
         "--init_hold"
             help = "Number of timesteps (--tstep) the system is held for initially to allow the condensation of the order parameter"
             arg_type = Int64
-            default = 100
-
-        "--N_value"
-            help = "Determine angle θ of crystal grains with respect to the x axis using the formula θ = tanh(1/N_value)"
-            arg_type = Int64
-            default = 2
-
-        "--rep_grain"
-            help = "Number of times grain structure is repeated in simulation domain. Must be a factor of --xmin"
-            arg_type = Int64
-            default = 0
+            default = 500
 
         "--thickness"
             help = "Thickness of polycrystal grain boundaries in coherence lengths"
@@ -178,21 +153,6 @@ function parse_CL()
             arg_type = String
             default = "CPU"
 
-        "--profil"
-            help = "Debug setting, set to true to run a profiler on an EvsJ trace"
-            arg_type = Bool
-            default = false
-        
-        "--vary_param"
-            help = "Debug setting, choose parameter to vary to test convergence when finding Jc"
-            arg_type = String
-            default = "pixels"
-
-        "--num_vary"
-            help = "Debug setting, determine number of simulations to run when varying --vary_param"
-            arg_type = Int64
-            default = 1
-
         "--rng_seed"
             help = "Seed for the random number generator, used to generate the initial state of the system"
             arg_type = Int64
@@ -230,11 +190,6 @@ function parse_CL()
 
         "--resume_states"
             help = "Boolean value determining whether to resume from the last saved state or start anew"
-            arg_type = Bool
-            default = false
-
-        "--continuous"
-            help = "Boolean value determining whether to continue from the state reached at the previous B field or start anew"
             arg_type = Bool
             default = false
     end
