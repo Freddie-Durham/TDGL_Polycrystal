@@ -27,27 +27,27 @@ const tol = 1e-3
 const yperiodic = true
 
 @testset "TDGL Polycrystal Tests" begin
-    @testset "Utilities.jl" begin
+    @testset "utilities.jl" begin
         include("test_utils.jl")
     end
 
-    @testset "Voronoi.jl" begin
+    @testset "voronoi.jl" begin
         include("test_voronoi.jl")
     end
 
-    @testset "Crystal2D.jl" begin
-        include("test_crystal2d.jl")
+    @testset "pattern.jl" begin
+        include("test_pattern.jl")
     end
 
-    @testset "Setup.jl" begin
+    @testset "setup.jl" begin
         include("test_setup.jl")
     end
 
-    @testset "FindJc.jl" begin
+    @testset "find_jc.jl" begin
         include("test_findjc.jl")
     end
 
-    @testset "CLI.jl" begin
+    @testset "cli.jl" begin
         include("test_cli.jl")
     end
 end
