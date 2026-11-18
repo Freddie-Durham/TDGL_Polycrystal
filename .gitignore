@@ -27,5 +27,8 @@ Manifest*.toml
 LocalPreferences.toml
 JuliaLocalPreferences.toml
 
+# Different computers have slightly different requirements
+Project.toml
+
 /outputs
 *.png
